@@ -4,6 +4,11 @@ N<-100000
 set.seed(89)
 pop <- data.frame(I_age_old = rbinom(N,1,0.6),I_sex_F = rbinom(N,1,0.5),I_race_B = rbinom(N,1,0.3))
 
+pop <- data.frame(I_age_old = rbinom(N,1,0.6),I_sex_F = rbinom(N,1,0.5),I_race_B = 0)
+
+pop$I_race_B[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.3)
+pop$I_race_B[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==1),1,0.6)
+
 pop$income <- 25000 + 20000 * pop$I_age_old + 5000 * pop$I_race_B + 10000 * pop$I_sex_F + rnorm(N,0,5000)
 
 logitp <- -2 - 0.00004*pop$income + 0.08 * pop$I_age_old
@@ -24,7 +29,7 @@ popFreq <- pop %>% summarise(count = n()/N)
 #simple random sample
 #ind<-sample(1:N,k)
 #samp<- pop[ind,]
-nsim<-10
+nsim<-100
 results<-list()
 for (i in 1:nsim){print(i)
 
@@ -40,7 +45,6 @@ sampNonDis<-(pop[pop$disease==0,])[ind,]
 samp <- rbind(sampDis,sampNonDis) 
 
 #poststrat
-
 samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B)
 sampFreq<-samp %>% summarise(count = n()/nrow(samp))
 
@@ -66,10 +70,23 @@ samp$I_race_B <- as.factor(samp$I_race_B)
 anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
 samp$rakeweight <- anes$weightvec 
 
-#######partial raking
-anes <- 
+###############################
+#partial raking
+###############################
+trueage <- wpct(pop$I_age_old)
+targets <- list(trueage)
+names(targets) <- c("I_age_old")
 
-parts <- list()
+#anesrakefinder(targets, samp, choosemethod = "total")
+# Raking starts here.  
+samp$caseid <- 1:nrow(samp)
+
+samp$I_age_old <- as.factor(samp$I_age_old)
+
+anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
+samp$prweight <- anes$weightvec
+
+
 for(j in 0:1){
   subpop <- subset(pop, I_age_old==j)
   truesexsub <- wpct(subpop$I_sex_F)
@@ -85,23 +102,30 @@ for(j in 0:1){
   subsamp$I_race_B <- as.factor(subsamp$I_race_B)
 
   
-  anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap=20, choosemethod = "total", weightvec = subsamp$rakeweight)
+  anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap=20, choosemethod = "total", weightvec=subsamp$prweight,center.baseweights = FALSE)
   
-  samp$prrakeweight[samp$I_age_old==j] <- anes$weightvec
+  samp$prweight[samp$I_age_old==j] <- anes$weightvec
   
 }
 
-results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight),sampPRrakemean = weighted.mean(samp$income,samp$prrakeweight))
+#samp %>% group_by(I_age_old, I_sex_F, I_race_B) %>% summarize(rake=mean(rakeweight),ps = mean(psweight),pr  = mean(prweight) ,n=n())
+
+results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight),sampPRmean = weighted.mean(samp$income,samp$prweight))
 ####sampprmean is only plotting a point- what did I do wrong?
 }
 
 
 res<-as.data.frame(do.call(rbind,results))
 
+res$biasPS <- res$sampPSmean-res$popMean
+res$biasrake <- res$samprakemean-res$popMean
+res$biasPR <- res$sampPRmean-res$popMean
+apply(res,2,mean)
+
 hist(res$sampMean,xlim=c(35000,45000))
 hist(res$sampPSmean,add=TRUE,col="blue")
 hist(res$samprakemean,add=TRUE,col="green")
-hist(res$sampPRrakemean, add= TRUE, col= "orange")
+hist(res$sampPRmean, add= TRUE, col= "orange")
 abline(v=mean(pop$income),col="red")
 
 
