@@ -1,3 +1,5 @@
+library(weights)
+library(anesrake)
 N<-100000
 set.seed(89)
 pop <- data.frame(I_age_old = rbinom(N,1,0.6),I_sex_F = rbinom(N,1,0.5),I_race_B = rbinom(N,1,0.3))
@@ -22,7 +24,7 @@ popFreq <- pop %>% summarise(count = n()/N)
 #simple random sample
 #ind<-sample(1:N,k)
 #samp<- pop[ind,]
-nsim<-1000
+nsim<-10
 results<-list()
 for (i in 1:nsim){print(i)
 
@@ -54,7 +56,7 @@ targets <- list(trueage, truesex, truerace)
 names(targets) <- c("I_age_old", "I_sex_F", "I_race_B")
 
 #anesrakefinder(targets, samp, choosemethod = "total")
-
+# Raking starts here.  
 samp$caseid <- 1:nrow(samp)
 
 samp$I_age_old <- as.factor(samp$I_age_old)
@@ -63,12 +65,12 @@ samp$I_race_B <- as.factor(samp$I_race_B)
 
 anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
 samp$rakeweight <- anes$weightvec 
-#######partial raking
 
+#######partial raking
+anes <- 
 
 parts <- list()
 for(j in 0:1){
-  
   subpop <- subset(pop, I_age_old==j)
   truesexsub <- wpct(subpop$I_sex_F)
   trueracesub <- wpct(subpop$I_race_B)
@@ -81,15 +83,15 @@ for(j in 0:1){
   subsamp$caseid <-1:nrow(subsamp)
   subsamp$I_sex_F <- as.factor(subsamp$I_sex_F)
   subsamp$I_race_B <- as.factor(subsamp$I_race_B)
-  
-  anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap= 20, choosemethod = "total")
-  subsamp$rakeweight <- anes$weightvec 
-  parts[[j+1]] <- subsamp
-}
-library(dplyr)
-samppr<- do.call(rbind, parts)
 
-results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight))
+  
+  anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap=20, choosemethod = "total", weightvec = subsamp$rakeweight)
+  
+  samp$prrakeweight[samp$I_age_old==j] <- anes$weightvec
+  
+}
+
+results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight),sampPRrakemean = weighted.mean(samp$income,samp$prrakeweight))
 ####sampprmean is only plotting a point- what did I do wrong?
 }
 
@@ -99,7 +101,7 @@ res<-as.data.frame(do.call(rbind,results))
 hist(res$sampMean,xlim=c(35000,45000))
 hist(res$sampPSmean,add=TRUE,col="blue")
 hist(res$samprakemean,add=TRUE,col="green")
-hist(res$subsampprmean, add= TRUE, col= "orange")
+hist(res$sampPRrakemean, add= TRUE, col= "orange")
 abline(v=mean(pop$income),col="red")
 
 
