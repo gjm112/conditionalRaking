@@ -1,0 +1,20 @@
+\begin{thebibliography}{1}
+% BibTex style file: imsart-nameyear.bst, 2013-01-28
+% Default style options (sort=1,type=nameyear).
+% Used options (sort=1,type=nameyear).
+
+\bibitem[\protect\citeauthoryear{Cummings, Eftekhary and House}{2003}]{key}
+\begin{barticle}[author]
+\bauthor{\bsnm{Cummings},~\bfnm{Arthur~B}\binits{A.~B.}},
+  \bauthor{\bsnm{Eftekhary},~\bfnm{David}\binits{D.}} \AND
+  \bauthor{\bsnm{House},~\bfnm{Frank~G}\binits{F.~G.}}
+(\byear{2003}).
+\btitle{The accurate determination of college students’ coefficients of
+  friction}.
+\bjournal{Journal of Sketchy Physics}
+\bvolume{13}
+\bpages{46--129}.
+\end{barticle}
+\endbibitem
+
+\end{thebibliography}

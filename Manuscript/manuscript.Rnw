@@ -1,0 +1,129 @@
+\documentclass[aoas]{imsart}
+%\usepackage{setspace}
+
+\usepackage{dsfont}
+\usepackage{amsthm,amsmath,amssymb,natbib}
+\RequirePackage[colorlinks,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{xspace,soul}
+\usepackage{graphicx}
+
+\usepackage[margin=1.45in]{geometry}
+
+\startlocaldefs
+\newcommand{\blind}{Three anonymous authors}
+
+\newcommand{\Ex}{\mathbb{E}}
+\newcommand{\Var}{\text{Var}}
+\newcommand{\bp}{\mathbf{p}}
+
+\newcommand{\R}{\textsf{R}\xspace}
+\newcommand{\pkg}[1]{\texttt{#1}\xspace}
+
+\definecolor{orange}{rgb}{1, 0.5, 0}
+
+\newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
+\newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
+\newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
+
+\def\balpha{\pmb{\alpha}}
+\def\btheta{\pmb{\theta}}
+\def\bgamma{\pmb{\gamma}}
+\def\btheta{\pmb{\theta}}
+\def\bphi{\pmb{\phi}}
+\def\bpsi{\pmb{\psi}}
+\def\bB{\pmb{B}}
+\def\bD{\pmb{D}}
+\def\bH{\pmb{H}}
+\def\bS{\pmb{S}}
+\def\bX{\pmb{X}}
+
+\endlocaldefs
+
+
+
+\begin{document}
+%\SweaveOpts{concordance=TRUE}
+
+\begin{frontmatter}
+
+\title{Conditional Raking}
+\runtitle{Conditional Raking}
+
+
+
+\author{\fnms{Emily M.} \snm{Kotnik}\ead[label=e1]{}}
+\address{\printead{e1}}
+\affiliation{Loyola University Chicago}
+
+\and
+\author{\fnms{Gregory J.} \snm{Matthews}\corref{}\ead[label=e2]{gmatthews1@luc.edu}}
+\address{\printead{e2}}
+\affiliation{Loyola University Chicago}
+
+
+
+\runauthor{Kotnik and Matthews }
+
+\begin{abstract}
+
+Some abstract
+
+\end{abstract}
+
+\begin{keyword}
+\kwd{post-stratification}
+\kwd{raking}
+\kwd{sampling}
+\end{keyword}
+
+\end{frontmatter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\input{intro}
+
+
+\section{Introduction}
+
+
+Accurately analyzing data from samples with an unequal probability of being sampled provides a unique challenge that has been a topic of concern for statisticians for decades when stratified sampling is not an option. Stratified sampling has been one of the primary methods used in order to produce a more precise representation of the population (Lohr, 2010, p. 26) since it was first brought to the forefront of survey methodology in 1934 by Neyman. Neyman proposed stratified sampling and purposive selection as a method to ensure a sample that was representative of the population (Neyman, 1934). Stratified sampling is used to ensure the proportions of the sample are equal to those of the population to obtain very precise data on the population of interest, and as method in increasing efficiency of administering a survey (Lohr, 2010, p.74). Though stratified random sampling is a satisfactory method to increase precision, marginal population totals are necessary and stratification must be performed prior to sampling. 
+	In the event that stratified sampling is not possible or the data was collected at a previous date, several methods are used to correct samples of subjects with unequal probabilities of selection. The two primary methods of increasing precision are post stratification and raking. Both methods require additional data from a secondary data source. Post stratification partitions the sample based on demographic variables of interest and weights each partition by the known proportions from the population (Gelman, Little, 1997).  Raking, first proposed in 1940 by Deming and Stephan under the name "least squares adjustment" (Deming, 1940), was first used as a method to bring the marginal distributions from sample data to those of the known population distributions from the 1940 US Census (Brick, Montaquila, Roth, 2003) through a series of adjustments based on the known marginal totals until the sample frequencies converge with the population frequencies (Brick, Montaquila, Roth, 2003).  The resulting frequencies from both post stratification and raking offered more precise joint and marginal totals while minimizing sample bias. 
+	Both post stratification and raking have limitations that have been acknowledged though few solutions have been proposed. Regarding post stratification, Holt and Smith argue that a post stratified estimate is not always more accurate than a simple random sample. In the event that the sample is stratified into many categories, each with many levels, it may be not be possible to adjust each cell due to the large number of calculations required or empty cells in the frequency table (Holt, Smith 1979). Additionally, the population distribution of each variable in question must be known for accurate post stratification. If this is not the case, or if the population distribution is inaccurate, additional calculations must be performed to effectively model the variable in question (Little, Gelman, 1997)
+Brick, Montaquila, and Roth identified several problems with raking. The first arises from inconsistent population marginal frequencies. If multiple external data sources are used to provide population data in the event the necessary information is not available from one source, inconsistent counts may be found and result in inaccurate adjustments. The second problem identified with raking results from a large number of variables. Raking across tables with a large number of cells may result slow convergence or a failure to converge (2003). Additionally, raking may inaccurately adjust cells with few or no observations (Brick, Montaquila, Roth, 2003).  
+Though post stratification and raking have their uses in correcting data collected from survey subjects with unequal probabilities of selection, there is an intermediate case that is not accounted for in either of these methods. In the event that some, but not all, joint population distributions are known from additional data sources, there is no readily available method to rake or post stratify the data. This paper proposes a method to accurately adjust the data to be reflective of the population. 
+
+
+
+\section{Methods}
+Consider a data set with $n$ observations and $p$ variables that is a sample from a population $P$.  There are $k\le p$ stratifying variables where there is at least some information about the joint population distribution of these $k$ variables.  That is we know based on auxilliary information the population counts of specified combinations of these $k$ variables.  
+
+Partition the $p$ variables into two sets: stratifiers and non-stratifers.  Denote the non-stratifiers as $Y_{1}, \cdots, Y_{p-k}$ and the stratifiers as $Z_{1}, \cdots, Z_{k}$.  Let $A_{j}$ consist of the set of variables in the $j$-th known joint population distribution which will be used to post-stratifywhere $j= 1, \cdots, \ell$.  
+
+\subsection{Theoretcal Results}
+Expected value of post -stratified mean?  How much bias is there?  
+Variance estimate?  
+
+\section{Simulation Study}
+\subsection{Simple k=3, l=2 case}
+
+\subsection{More complicated case}
+
+\section{Real Data Example}
+Hospital Datta 
+
+
+
+\section{Conclusion and Future Work}
+
+
+\cite{key}
+
+
+
+\bibliographystyle{imsart-nameyear}
+\bibliography{refs}
+
+
+
+
+
+\end{document}
