@@ -7,10 +7,10 @@ pop <- data.frame(I_age_old = rbinom(N,1,0.6),I_sex_F = rbinom(N,1,0.5),I_race_B
 pop <- data.frame(I_age_old = rbinom(N,1,0.6),I_sex_F = rbinom(N,1,0.5),I_race_B = 0)
 
 pop$I_race_B[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.3)
-pop$I_race_B[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==1),1,0.6)
+pop$I_race_B[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.6)
 
 pop$I_sex_F[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.8)
-pop$I_sex_F[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==1),1,0.1)
+pop$I_sex_F[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.1)
 
 pop$income <- 25000 + 20000 * pop$I_age_old + 5000 * pop$I_race_B + 10000 * pop$I_sex_F  + 10000 * pop$I_sex_F*pop$I_race_B + rnorm(N,0,5000)
 
