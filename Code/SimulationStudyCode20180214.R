@@ -9,13 +9,18 @@ pop <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0)
 pop$I_sex_F[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.1)
 pop$I_sex_F[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.9)
 
-pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==1),1,0.2)
-pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==0),1,0.4)
-pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==1),1,0.9)
-pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==0),1,0.8)
+# pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==1),1,0.2)
+# pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==0),1,0.4)
+# pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==1),1,0.9)
+# pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==0),1,0.8)
 
-pop$income <- 25000 + 50000 * pop$I_age_old + 25000 * pop$I_race_B + 10000 * pop$I_sex_F + rnorm(N,0,5000)
-#30000 * pop$I_sex_F*pop$I_race_B
+pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==1),1,0.1)
+pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==0),1,0.9)
+pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==1),1,0.9)
+pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==0),1,0.1)
+
+pop$income <- 25000 + 50000 * pop$I_age_old + 25000 * pop$I_race_B + 10000 * pop$I_sex_F + 30000 * pop$I_sex_F*pop$I_race_B + 30000 * pop$I_sex_F*pop$I_age_old +  30000 * pop$I_age_old*pop$I_race_B + 50000 * pop$I_sex_F*pop$I_race_B*pop$I_age_old + rnorm(N,0,5000)
+#
 
 apop <- lm(income~I_age_old+pop$I_sex_F+pop$I_race_B,data=pop)
 
@@ -33,28 +38,21 @@ popFreq <- pop %>% summarise(count = n()/N)
 #samp<- pop[ind,]
 nsim<-100
 results<-list()
+resultsLM <- list()
+resultsLM[["lmRaw"]] <- resultsLM[["lmPS"]] <- resultsLM[["lmRake"]] <- resultsLM[["lmPR"]] <- matrix(NA, ncol=5,nrow=nsim)
 for (i in 1:nsim){print(i)
-  
-  pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==1),1,0.2)
-  pop$I_race_B[pop$I_age_old==1 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==1 & pop$I_sex_F==0),1,0.4)
-  pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==1] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==1),1,0.9)
-  pop$I_race_B[pop$I_age_old==0 & pop$I_sex_F==0] <- rbinom(sum(pop$I_age_old==0 & pop$I_sex_F==0),1,0.8)
   
   sampList <- list()
   
-  pop[pop$I_age_old==1 & pop$I_sex_F==1,]
   ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==1),100,replace=FALSE)
   sampList[[1]] <- pop[pop$I_age_old==1 & pop$I_sex_F==1,][ind,]
   
-  pop[pop$I_age_old==1 & pop$I_sex_F==0,]
   ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==0),100,replace=FALSE)
   sampList[[2]] <- pop[pop$I_age_old==1 & pop$I_sex_F==0,][ind,]
   
-  pop[pop$I_age_old==0 & pop$I_sex_F==1,]
   ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==1),100,replace=FALSE)
   sampList[[3]] <- pop[pop$I_age_old==0 & pop$I_sex_F==1,][ind,]
   
-  pop[pop$I_age_old==0 & pop$I_sex_F==0,]
   ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==0),100,replace=FALSE)
   sampList[[4]] <- pop[pop$I_age_old==0 & pop$I_sex_F==0,][ind,]
   
@@ -128,13 +126,24 @@ for (i in 1:nsim){print(i)
   #samp %>% group_by(I_age_old, I_sex_F, I_race_B) %>% summarize(rake=mean(rakeweight),ps = mean(psweight),pr  = mean(prweight) ,n=n())
   
   results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight),sampPRmean = weighted.mean(samp$income,samp$prweight))
-  #pop_model<-lm(income~I_age_old+I_sex_F+I_race_B,data=pop)
-  #a<-lm(income~I_age_old+I_sex_F+I_race_B,data=samp)
-  #b<-lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=psweight)
-  #c<-lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=rakeweight)
-  #d<-lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=prweight)
-  ####sampprmean is only plotting a point- what did I do wrong?
+  
+  pop_model <- lm(income~I_age_old+I_sex_F+I_race_B,data=pop)
+  # resultsLM[["lmRaw"]][i,] <- lm(income~I_age_old+I_sex_F+I_race_B,data=samp)$coefficients
+  # resultsLM[["lmPS"]][i,] <- lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=psweight)$coefficients
+  # resultsLM[["lmRake"]][i,] <- lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=rakeweight)$coefficients
+  # resultsLM[["lmPR"]][i,] <-lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=prweight)$coefficients
+  
+  resultsLM[["lmRaw"]][i,] <- lm(income~I_age_old*I_sex_F*I_race_B,data=samp)$coefficients
+  resultsLM[["lmPS"]][i,] <- lm(income~I_age_old*I_sex_F*I_race_B,data=samp,weight=psweight)$coefficients
+  resultsLM[["lmRake"]][i,] <- lm(income~I_age_old+I_sex_F*I_race_B,data=samp,weight=rakeweight)$coefficients
+  resultsLM[["lmPR"]][i,] <-lm(income~I_age_old+I_sex_F*I_race_B,data=samp,weight=prweight)$coefficients
+
 }
+
+apply(resultsLM[["lmRaw"]],2,mean)
+apply(resultsLM[["lmPS"]],2,mean)
+apply(resultsLM[["lmRake"]],2,mean)
+apply(resultsLM[["lmPR"]],2,mean)
 
 
 res<-as.data.frame(do.call(rbind,results))
@@ -144,7 +153,7 @@ res$biasrake <- res$samprakemean-res$popMean
 res$biasPR <- res$sampPRmean-res$popMean
 apply(res,2,mean)
 
-rhist(res$sampMean,xlim=c(60000,100000))
+hist(res$sampMean,xlim=c(60000,120000))
 hist(res$sampPSmean,add=TRUE,col="blue")
 hist(res$samprakemean,add=TRUE,col="green")
 hist(res$sampPRmean, add= TRUE, col= "orange")

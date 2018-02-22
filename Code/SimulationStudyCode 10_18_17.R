@@ -12,6 +12,9 @@ pop$I_race_B[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.6)
 pop$I_sex_F[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.8)
 pop$I_sex_F[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.1)
 
+pop$I_sex_F[pop$I_age_old==1] <- rbinom(sum(pop$I_age_old==1),1,0.8)
+pop$I_sex_F[pop$I_age_old==0] <- rbinom(sum(pop$I_age_old==0),1,0.1)
+
 pop$income <- 25000 + 20000 * pop$I_age_old + 5000 * pop$I_race_B + 10000 * pop$I_sex_F  + 10000 * pop$I_sex_F*pop$I_race_B + rnorm(N,0,5000)
 
 logitp <- 0 - 0.00004*pop$income + 0.08 * pop$I_age_old - 0.08 * pop$I_sex_F + 0.1 * pop$I_race_B
@@ -48,7 +51,7 @@ ind<-sample(1:nrow(pop[pop$disease==0,]),nNonDis)
 sampNonDis<-(pop[pop$disease==0,])[ind,]
 
 samp <- rbind(sampDis,sampNonDis) 
-samp <- samp[sample(1:nrow(samp),100),]
+#samp <- samp[sample(1:nrow(samp),100),]
 
 #poststrat
 samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B)
