@@ -133,10 +133,10 @@ for (i in 1:nsim){print(i)
   # resultsLM[["lmRake"]][i,] <- lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=rakeweight)$coefficients
   # resultsLM[["lmPR"]][i,] <-lm(income~I_age_old+I_sex_F+I_race_B,data=samp,weight=prweight)$coefficients
   
-  resultsLM[["lmRaw"]][i,] <- lm(income~I_age_old*I_sex_F*I_race_B,data=samp)$coefficients
-  resultsLM[["lmPS"]][i,] <- lm(income~I_age_old*I_sex_F*I_race_B,data=samp,weight=psweight)$coefficients
-  resultsLM[["lmRake"]][i,] <- lm(income~I_age_old+I_sex_F*I_race_B,data=samp,weight=rakeweight)$coefficients
-  resultsLM[["lmPR"]][i,] <-lm(income~I_age_old+I_sex_F*I_race_B,data=samp,weight=prweight)$coefficients
+  resultsLM[["lmRaw"]][i,] <- lm(income~I_age_old*I_sex_F + I_age_old*I_race_B + I_sex_F*I_race_B,data=samp)$coefficients
+  resultsLM[["lmPS"]][i,] <- lm(income~I_age_old*I_sex_F + I_age_old*I_race_B + I_sex_F*I_race_B,data=samp,weight=psweight)$coefficients
+  resultsLM[["lmRake"]][i,] <- lm(income~I_age_old*I_sex_F + I_age_old*I_race_B + I_sex_F*I_race_B,data=samp,weight=rakeweight)$coefficients
+  resultsLM[["lmPR"]][i,] <-lm(income~I_age_old*I_sex_F + I_age_old*I_race_B + I_sex_F*I_race_B,data=samp,weight=prweight)$coefficients
 
 }
 
