@@ -20,9 +20,9 @@ p <- expit(0 + 0.9 * pop$I_age_old + 1.2 * pop$I_age_old * pop$I_sex_F)
 pop$I_race_B <- rbinom(N,1,prob = p)
 
 #Insurance
-p <- expit(1 + 0.9 * pop$I_age_old + 
-             -0.2 * pop$I_sex_F +
-             -2.5 * pop$I_race_B * pop$I_sex_F)
+p <- expit(0 + 0.2 * pop$I_sex_F +
+             0.5 * pop$I_race_B * pop$I_sex_F +
+             - 1.2 * pop$I_age_old)
 pop$I_ins_A <- rbinom(N,1,prob = p)
 
 pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
@@ -31,8 +31,8 @@ popFreq <- pop %>% summarise(count = n()/N)
 
 
 pop$income <- 25000 + 
-  50000 * pop$I_age_old + 25000 * pop$I_race_B + 10000 * pop$I_sex_F + 
-  30000 * pop$I_sex_F * pop$I_race_B + 
+  20000 * pop$I_age_old + 15000 * pop$I_race_B + 10000 * pop$I_sex_F + 
+  20000 * pop$I_sex_F * pop$I_race_B + 
   30000 * pop$I_sex_F * pop$I_age_old +  
   30000 * pop$I_age_old * pop$I_race_B + 
   10000 * pop$I_sex_F * pop$I_ins_A +
@@ -57,10 +57,10 @@ resultsLM <- list()
 resultsLM[["lmRaw"]] <- resultsLM[["lmPS"]] <- resultsLM[["lmRake"]] <- resultsLM[["lmPR"]] <- matrix(NA, ncol=5,nrow=nsim)
 for (i in 1:nsim){ 
   #print(i)
-  
+ 
   sampList <- list()
   
-  samp <= NULL
+  samp <- NULL
   # # dplyr's sample_n lets you grab rows. but does it replace??
   strat1 <- sample_n(pop[pop$I_age_old==0 & pop$I_sex_F == 0,], 100, weight=NULL, replace = FALSE)
   strat2 <- sample_n(pop[pop$I_age_old==0 & pop$I_sex_F == 1,], 100, weight=NULL, replace = FALSE)
@@ -68,13 +68,10 @@ for (i in 1:nsim){
   strat4 <- sample_n(pop[pop$I_age_old==1 & pop$I_sex_F == 1,], 100, weight=NULL, replace = FALSE)
   samp <- do.call(rbind, list(strat1, strat2, strat3, strat4))
   
-  samp <- do.call(rbind,sampList)
+  # samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+  # sampFreq <- samp %>% summarise(count = n()/nrow(samp))
+  # sampFreq
   
-  samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-  sampFreq <- samp %>% summarise(count = n()/nrow(samp))
-  sampFreq
-  
-  #samp <- samp[sample(1:nrow(samp),100),]
   
   #poststrat
   samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
@@ -127,14 +124,14 @@ for (i in 1:nsim){
                                     ifelse(I_sex_F ==0 & I_race_B == 1, 2,
                                            ifelse(I_sex_F==1 & I_race_B ==0, 3, 4))))
   
-  pop <- pop %>% 
+  popcopy <- pop %>% 
     mutate(I_sex_race = ifelse(I_sex_F ==0 & I_race_B ==0, 1,
                                ifelse(I_sex_F ==0 & I_race_B == 1, 2,
                                       ifelse(I_sex_F==1 & I_race_B ==0, 3, 4))))
   
   
   for(j in 0:1){
-    subpop <- subset(pop, I_age_old==j)
+    subpop <- subset(popcopy, I_age_old==j)
     truesexracesub <- wpct(subpop$I_sex_race)
     trueinssub <- wpct(subpop$I_ins_A)
     subtargets <- list(truesexracesub, trueinssub)
@@ -184,43 +181,49 @@ res$biasrake <- res$samprakemean-res$popMean
 res$biasPR <- res$sampPRmean-res$popMean
 apply(res,2,mean)
 
-hist(res$sampMean,xlim=c(57000,63000))
+hist(res$sampMean,xlim=c(70000,102000))
 hist(res$sampPSmean,add=TRUE,col="blue")
 hist(res$samprakemean,add=TRUE,col="green")
 hist(res$sampPRmean, add= TRUE, col= "orange")
 abline(v=mean(pop$income),col="red",lwd=3)
 
 
+abline(v=mean(res$sampPSmean), col = "blue")
+abline(v=mean(res$samprakemean),col="green")
+abline(v=mean(res$sampPRmean), col= "orange")
+legend("topright",inset=c(0.,0), c("Sample", "Post-Strat", "Rake", "PartialR", "Pop"), fill = c("white", "blue", "green", "orange", "red"))
 
 
 
 
-#######
-library(anesrake)
-
-sexF <- c(.5,.5)
-AgeO <- c(.6, .4)
-RaceB <- c(.3, .7)
-
-trueage <- wpct(pop$I_age_old)
-truesex <- wpct(pop$I_sex_F)
-truerace <- wpct(pop$I_race_B)
-targets <- list(trueage, truesex, truerace)
-names(targets) <- c("I_age_old", "I_sex_F", "I_race_B")
-
-#anesrakefinder(targets, samp, choosemethod = "total")
-
-samp$caseid <- 1:nrow(samp)
-
-samp$I_age_old <- as.factor(samp$I_age_old)
-samp$I_sex_F <- as.factor(samp$I_sex_F)
-samp$I_race_B <- as.factor(samp$I_race_B)
-
-anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
-samp$rakeweight <- anes$weightvec 
 
 
-library(dplyr)
-samppr<- do.call(rbind, parts)
-samppr<- group_by(samppr, I_sex_F, I_race_B)
-samppr%>%summarise(wt = sum(rakeweight))
+# #######
+# library(anesrake)
+# 
+# sexF <- c(.5,.5)
+# AgeO <- c(.6, .4)
+# RaceB <- c(.3, .7)
+# 
+# trueage <- wpct(pop$I_age_old)
+# truesex <- wpct(pop$I_sex_F)
+# truerace <- wpct(pop$I_race_B)
+# targets <- list(trueage, truesex, truerace)
+# names(targets) <- c("I_age_old", "I_sex_F", "I_race_B")
+# 
+# #anesrakefinder(targets, samp, choosemethod = "total")
+# 
+# samp$caseid <- 1:nrow(samp)
+# 
+# samp$I_age_old <- as.factor(samp$I_age_old)
+# samp$I_sex_F <- as.factor(samp$I_sex_F)
+# samp$I_race_B <- as.factor(samp$I_race_B)
+# 
+# anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
+# samp$rakeweight <- anes$weightvec 
+# 
+# 
+# library(dplyr)
+# samppr<- do.call(rbind, parts)
+# samppr<- group_by(samppr, I_sex_F, I_race_B)
+# samppr%>%summarise(wt = sum(rakeweight))
