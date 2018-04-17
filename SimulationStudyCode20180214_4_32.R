@@ -13,45 +13,9 @@ expit <- function(x){
   return(out)
 }
 
-# pop <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
-# 
-# #sex
-# p <- expit(0 + 0.9 * pop$I_age_old)
-# pop$I_sex_F <- rbinom(N,1,prob = p)
-# 
-# #race
-# p <- expit(1 + 0.9 * pop$I_age_old * pop$I_sex_F + 1.2 * pop$I_age_old * pop$I_race_B)
-# pop$I_race_B <- rbinom(N,1,prob = p)
-# 
-# #Insurance
-# p <- expit(0 + 1.2 * pop$I_age_old * pop$I_race_B * pop$I_sex_F)
-# pop$I_ins_A <- rbinom(N,1,prob = p)
-# 
-# pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-# popFreq <- pop %>% summarise(count = n()/N)
-# popFreq
-#
-# pop$income <- 25000 + 
-#   20000 * pop$I_age_old +
-#   20000 * pop$I_sex_F * pop$I_race_B + 
-#   30000 * pop$I_sex_F * pop$I_age_old +  
-#   30000 * pop$I_age_old * pop$I_race_B + 
-#   10000 * pop$I_sex_F * pop$I_ins_A +
-#   50000 * pop$I_age_old * pop$I_sex_F * pop$I_race_B * pop$I_ins_A +
-#   rnorm(N,0,5000)
-
-#boxplot(income ~ I_age_old + I_sex_F, data=pop)
-#boxplot(income ~ I_ins_A + I_age_old, data=pop)
-#apop <- lm(income~I_age_old+pop$I_sex_F+pop$I_race_B+pop$I_ins_A,data=pop)
-
-
-#### uses completely stratified sampling with sample_n()
-
-resfunc <- function(pop){
+resfunc <- function(pop, sampmethod){
   set.seed(89)
 
-  #popFreq
-  
   ############################################
   #Sample statistics
   ############################################
@@ -59,9 +23,11 @@ resfunc <- function(pop){
   #simple random sample
   #ind<-sample(1:N,k)
   #samp<- pop[ind,]
-  s_size <- 100
+  #s_size <- 100
   nsim<-100
   results<-list()
+  allSamp <- list()
+  allSampFreq <- list()
   resultsLM <- list()
   resultsLM[["lmRaw"]] <- resultsLM[["lmPS"]] <- resultsLM[["lmRake"]] <- resultsLM[["lmPR"]] <- matrix(NA, ncol=5,nrow=nsim)
   for (i in 1:nsim){ 
@@ -94,21 +60,24 @@ resfunc <- function(pop){
     # sampList[[8]] <- pop[pop$I_age_old==0 & pop$I_sex_F==0 & pop$I_race_B == 0,][ind,]
     # samp <- do.call(rbind, sampList)
 
-    samp <- sample_n(pop, 50, replace = FALSE)   # pop is already ordered in groups so sample_n will take 50 from each group (50*16=800!)
+    #samp <- sample_n(pop, 50, replace = FALSE)   # pop is already ordered in groups so sample_n will take 50 from each group (50*16=800!)
     
-    ###### check samp makeup
-    # samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-    # sampFreq <- samp %>% summarise(count = n()/nrow(samp))
-    # sampFreq
+    samp <- sampmethod(pop)
     
+    ###### check samp makeup, add to outputList
+    samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+    sampFreq <- samp %>% summarise(count = n()/nrow(samp))
+    #sampFreq
+    
+    allSamp[[i]] <- samp
+    allSampFreq [[i]] <- sampFreq
+    
+      
     ###############################
     # post strat
     ###############################
     pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
     popFreq <- pop %>% summarise(count = n()/N)
-    
-    samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-    sampFreq <- samp %>% summarise(count = n()/nrow(samp))
     
     sampFreq$psweight <- popFreq$count/sampFreq$count
     samp<-merge(samp,sampFreq, by.x = c("I_age_old","I_sex_F","I_race_B", "I_ins_A"), by.y = c("I_age_old","I_sex_F","I_race_B", "I_ins_A"),all.x=TRUE)
@@ -205,8 +174,8 @@ resfunc <- function(pop){
   }
   res<-as.data.frame(do.call(rbind,results))
   
-  #return(weightslist)
-  return(res)
+  outputList <- list("res" = res, "results" = results, "allSamp" = allSamp)
+  return(outputList)
 }
 
 
@@ -237,11 +206,10 @@ resfunc <- function(pop){
 
 ################ 1: mostly stratified sampling
 
-resbias1 <- restrial1
-resbias1$biasPS <- resbias1$sampPSmean-resbias1$popMean
-resbias1$biasrake <- resbias1$samprakemean-resbias1$popMean
-resbias1$biasPR <- resbias1$sampPRmean-resbias1$popMean
-apply(resbias1,2,mean)
+# Trial 1 -----------------------------------------------------------------
+
+
+
 pop <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0.9 * pop$I_age_old)
@@ -263,19 +231,57 @@ pop$income <- 25000 +
   40000 * pop$I_age_old * pop$I_race_B * pop$I_ins_A + 
   20000 * pop$I_age_old * pop$I_sex_F * pop$I_race_B * pop$I_ins_A +
   rnorm(N,0,5000)
+method1 <- function(pop){
+  s_size <- 100
+  ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1), s_size, replace=FALSE)
+  sampList[[1]] <- pop[pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1,][ind,]
 
-restrial1 <- resfunc(pop)
+  ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 0), s_size, replace=FALSE)
+  sampList[[2]] <- pop[pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 0,][ind,]
 
-res1 <- subset(gather(restrial1), key != "popMean")
+  ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==0 & pop$I_race_B == 1), s_size, replace=FALSE)
+  sampList[[3]] <- pop[pop$I_age_old==1 & pop$I_sex_F==0 & pop$I_race_B == 1,][ind,]
+
+  ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==0 & pop$I_race_B == 0), s_size, replace=FALSE)
+  sampList[[4]] <- pop[pop$I_age_old==1 & pop$I_sex_F==0 & pop$I_race_B == 0,][ind,]
+
+  ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==1 & pop$I_race_B == 1), s_size, replace=FALSE)
+  sampList[[5]] <- pop[pop$I_age_old==0 & pop$I_sex_F==1 & pop$I_race_B == 1,][ind,]
+
+  ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==1 & pop$I_race_B == 0), s_size, replace=FALSE)
+  sampList[[6]] <- pop[pop$I_age_old==0 & pop$I_sex_F==1 & pop$I_race_B == 0,][ind,]
+
+  ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==0 & pop$I_race_B == 1), s_size, replace=FALSE)
+  sampList[[7]] <- pop[pop$I_age_old==0 & pop$I_sex_F==0 & pop$I_race_B == 1,][ind,]
+
+  ind <- sample(1:sum(pop$I_age_old==0 & pop$I_sex_F==0 & pop$I_race_B == 0), s_size, replace=FALSE)
+  sampList[[8]] <- pop[pop$I_age_old==0 & pop$I_sex_F==0 & pop$I_race_B == 0,][ind,]
+  samp <- do.call(rbind, sampList)
+  
+  return(samp)
+}
+restrial1 <- resfunc(pop, method1)
+
+resbias1 <- restrial1$res
+resbias1$biasPS <- resbias1$sampPSmean-resbias1$popMean
+resbias1$biasrake <- resbias1$samprakemean-resbias1$popMean
+resbias1$biasPR <- resbias1$sampPRmean-resbias1$popMean
+apply(resbias1,2,mean)
+
+res1 <- subset(gather(restrial1$res), key != "popMean")
 
 p1 <- ggplot(res1) +
   geom_vline(xintercept = mean(pop3$income), color = "orange") +
-  geom_histogram(aes(x = value, fill = key), binwidth=500) +
+  geom_histogram(aes(x = value, fill = key), bins = 100) +
   ggtitle("3 var Stratified Samp") +
   xlim(60000, 100000)
 p1
 
-################ 2: completely stratified samp (using sample_n)
+
+
+# Trial 2 -----------------------------------------------------------------
+# 2: completely stratified samp (using sample_n)
+
 pop2 <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0.9 * pop2$I_age_old)
@@ -289,6 +295,7 @@ pop2$I_ins_A <- rbinom(N,1,prob = p)
 pop2 <- pop2 %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 pop2Freq <- pop2 %>% summarise(count = n()/N)
 pop2Freq
+
 pop2$income <- 25000 + 
   40000 * pop2$I_age_old +
   25000 * pop2$I_sex_F * pop2$I_race_B + 
@@ -297,24 +304,38 @@ pop2$income <- 25000 +
   20000 * pop2$I_age_old * pop2$I_sex_F * pop2$I_race_B * pop2$I_ins_A +
   rnorm(N,0,5000)
 
-restrial2 <- resfunc(pop2)
+method2 <- function(pop){
+  samp <- sample_n(pop, 50, replace = FALSE)
+  return(samp)
+}
 
-resbias2 <- restrial2
+restrial2 <- resfunc(pop2, method2)
+
+resbias2 <- restrial2$res
 resbias2$biasPS <- resbias2$sampPSmean-resbias2$popMean
 resbias2$biasrake <- resbias2$samprakemean-resbias2$popMean
 resbias2$biasPR <- resbias2$sampPRmean-resbias2$popMean
 apply(resbias2,2,mean)
 
-res2 <- subset(gather(restrial2), key != "popMean")
+res2 <- subset(gather(restrial2$res), key != "popMean")
 p2 <- ggplot(res2) +
   geom_vline(xintercept = mean(pop3$income), color = "orange") +
-  geom_histogram(aes(x = value, fill = key), binwidth=500) +
+  geom_histogram(aes(x = value, fill = key), bins=100) +
   ggtitle("using sample_n") +
   xlim(60000, 100000)
 p2
 
+pop2Freq <- pop2 %>% summarise(count = n())
+pop2Freq$percent <- pop2Freq$count/N
+pop2Freq
 
-#### 3: Random ? / sample_n with ungroup 
+chisq.test(pop2Freq$count, p = rep(1/length(pop2Freq$count), length(pop2Freq$count)))
+  # p value 2.2e-16
+
+
+
+# Trial 3 -----------------------------------------------------------------
+#### 3: Random sample
 pop3 <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0.9 * pop3$I_age_old)
@@ -328,34 +349,42 @@ pop3$I_ins_A <- rbinom(N,1,prob = p)
 
 pop3 <- pop3 %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 pop3Freq <- pop3 %>% summarise(count = n()/N)
-#pop3Freq
+pop3Freq
 
 pop3$income <- 25000 + 
-40000 * pop3$I_age_old +
+  40000 * pop3$I_age_old +
   25000 * pop3$I_sex_F * pop3$I_race_B + 
   30000 * pop3$I_sex_F * pop3$I_age_old +  
   40000 * pop3$I_age_old * pop3$I_race_B * pop3$I_ins_A + 
   20000 * pop3$I_age_old * pop3$I_sex_F * pop3$I_race_B * pop3$I_ins_A +
   rnorm(N,0,5000)
 
-ungroup(pop3)
-restrial3 <- resfunc(pop3)
+method3 <- function(pop){
+  pop <- ungroup(pop)
+  samp <- sample_n(pop3, 800, replace= FALSE)
+  return(samp)
+}
 
-resbias3 <- restrial3
+restrial3 <- resfunc(pop3, method3)
+
+resbias3 <- restrial3$res
 resbias3$biasPS <- resbias3$sampPSmean-resbias3$popMean
 resbias3$biasrake <- resbias3$samprakemean-resbias3$popMean
 resbias3$biasPR <- resbias3$sampPRmean-resbias3$popMean
 apply(resbias3,2,mean)
 
 
-res3 <- subset(gather(restrial3), key != "popMean")
+res3 <- subset(gather(restrial3$res), key != "popMean")
 p3 <- ggplot(res3) +  
   geom_vline(xintercept = mean(pop3$income), color = "orange") +
-  geom_histogram(aes(x = value, fill = key), binwidth=500) +
-  ggtitle("using sample_n, ungrouped (random)") +
+  geom_histogram(aes(x = value, fill = key), bins=100) +
+  ggtitle("random sample") +
   xlim(60000, 100000)
 p3
 
+
+
+# Trial 4 -----------------------------------------------------------------
 
 #### 4: mostly strat samp with different income  
 pop4 <- data.frame(I_age_old = rbinom(N, 1, 0.5), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
@@ -377,8 +406,6 @@ pop4Freq
 chisq.test(pop4Freq$count,p = rep(1/length(pop4Freq$count), length(pop4Freq$count)))
 
 
-
-
 pop4$income <- 25000 + 
   20000 * pop4$I_age_old +
   15000 * pop4$I_sex_F +
@@ -389,7 +416,7 @@ pop4$income <- 25000 +
   50000 * pop4$I_age_old * pop4$I_sex_F * pop4$I_race_B * pop4$I_ins_A +
   rnorm(N,0,5000)
 
-restrial4 <- resfunc(pop4)   #######################
+restrial4 <- resfunc(pop4)  
 
 resbias4 <- restrial4
 resbias4$biasPS <- resbias4$sampPSmean-resbias4$popMean
@@ -407,6 +434,8 @@ p4
 
 
 
+
+# Trial 5 -----------------------------------------------------------------
 ################ 5: mostly strat samp w/ different pop 1
 pop5 <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
@@ -448,7 +477,9 @@ p5 <- ggplot(res5) +
 p5
 
 
-################ mostly strat samp w/ 0s
+
+# Trial 6 -----------------------------------------------------------------
+################ 6: completely strat samp w/ 0s (balanced pop)
 pop6 <- data.frame(I_age_old = rbinom(N, 1, 0.5), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0 * pop6$I_age_old)
@@ -476,25 +507,28 @@ pop6$income <- 25000 +
 
 restrial6 <- resfunc(pop6)
 
-resbias6 <- restrial6
+resbias6 <- restrial6$res
 resbias6$biasPS <- resbias6$sampPSmean-resbias6$popMean
 resbias6$biasrake <- resbias6$samprakemean-resbias6$popMean
 resbias6$biasPR <- resbias6$sampPRmean-resbias6$popMean
 apply(resbias6,2,mean)
 
-res6 <- subset(gather(restrial6), key != "popMean")
+res6 <- subset(gather(restrial6$res), key != "popMean")
 p6 <- ggplot(res6) +
   geom_vline(xintercept = mean(pop6$income), color = "orange") +
   geom_histogram(aes(x = value, fill = key), binwidth=100) +
-  ggtitle("mostly strat samp, even pop") +
+  ggtitle("n_samp, balanced pop") +
   xlim(60000, 105000)
 p6
 
-pop6Freq <- pop6 %>% summarise(count = n()/N)
-pop6Freq$realcount <- pop6Freq %>% summarise(realcount = n())
+pop6Freq <- pop6 %>% summarise(realcount = n())
+pop6Freq$count <- pop6Freq$realcount/N
 pop6Freq
 
-chisq.test(pop6Freq$count,p = rep(1/length(pop6Freq$count), length(pop6Freq$count)))
+chisq.test(pop6Freq$realcount, p = rep(1/length(pop6Freq$realcount), length(pop6Freq$realcount)))
+    # p-value 0.5568
+
+#########
 
 
 
