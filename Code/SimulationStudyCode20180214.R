@@ -152,7 +152,7 @@ resfunc <- function(pop, sampmethod){
 
    
 ############  Trials   ###################
-## Pop A
+####### Pop A
 popA <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0.9 * popA$I_age_old)
@@ -163,11 +163,12 @@ popA$I_race_B <- rbinom(N,1,prob = p)
 #Insurance
 p <- expit(0 + 1.2 * popA$I_age_old * popA$I_race_B * popA$I_sex_F)
 popA$I_ins_A <- rbinom(N,1,prob = p)
+
 popA <- popA %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 popAFreq <- popA %>% summarise(count = n()/N)
 popAFreq
 
-## Pop B
+###### Pop B
 popB <- data.frame(I_age_old = rbinom(N, 1, 0.8), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 - 0.9 * popB$I_age_old)
@@ -178,26 +179,35 @@ popB$I_race_B <- rbinom(N,1,prob = p)
 #Insurance
 p <- expit(0 + 1.2 * popB$I_age_old * popB$I_race_B * popB$I_sex_F)
 popB$I_ins_A <- rbinom(N,1,prob = p)
+
 popB <- popB %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 popBFreq <- popB %>% summarise(count = n()/N)
 popBFreq
 
-## Pop C
-popC <- data.frame(I_age_old = rbinom(N, 1, 0.4), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
+###### Pop C
+# popC <- data.frame(I_age_old = rbinom(N, 1, 0.4), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
+# sex
+# p <- expit(0 + 0.9 * popC$I_age_old)
+# popC$I_sex_F <- rbinom(N,1,prob = p)
+# #race
+# p <- expit(1 + 2 * popC$I_age_old * popC$I_sex_F)
+# popC$I_race_B <- rbinom(N,1,prob = p)
+popC <- data.frame(I_age_old = rbinom(N, 1, 0.4), I_sex_F = 0, I_race_B = 0)
 #sex
-p <- expit(0 + 0.9 * popC$I_age_old)
+p <- expit(0 + 1.2 * popC$I_age_old)
 popC$I_sex_F <- rbinom(N,1,prob = p)
 #race
-p <- expit(1 + 0.9 * popC$I_age_old * popC$I_sex_F)
-popC$I_race_B <- rbinom(N,1,prob = p)
-#Insurance
-p <- expit(1 + 1.2 * popC$I_age_old * popC$I_race_B * popC$I_sex_F)
+p <- expit(1 + 0.6 * popC$I_age_old * popC$I_sex_F)
+popC$I_race_B <- rbinom(N,1,prob = p) 
+#ins
+p <- expit(0 + 1.2 * popC$I_age_old * popC$I_sex_F + 1.8 * popC$I_race_B)
 popC$I_ins_A <- rbinom(N,1,prob = p)
+
 popC <- popC %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 popCFreq <- popC %>% summarise(count = n()/N)
 popCFreq
 
-## Pop D
+###### Pop D
 popD <- data.frame(I_age_old = rbinom(N, 1, 0.5), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
 #sex
 p <- expit(0 + 0.0 * popD$I_age_old)
@@ -208,6 +218,7 @@ popD$I_race_B <- rbinom(N,1,prob = p)
 #Insurance
 p <- expit( 0.0 * popD$I_age_old * popD$I_race_B * popD$I_sex_F)
 popD$I_ins_A <- rbinom(N,1,prob = p)
+
 popD <- popD %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 popDFreq <- popD %>% summarise(count = n()/N)
 popDFreq
@@ -635,7 +646,7 @@ p5
 
 
 
-# Trial 6 Random Sample ***, Pop B -----------------------------------------------------------------
+# Trial 6: Random Sample ***, Pop B -----------------------------------------------------------------
 ########## At least 1 obs from each group, the rest chosen via Random Sampling, Population B
 
 pop6 <- popB
@@ -681,7 +692,7 @@ pop6Freq
 
 
 
-# Trial 7 Three Variable Stratified, Pop C-----------------------------------------------------------------
+# Trial 7: Three Variable Stratified, Pop C-----------------------------------------------------------------
 ######### 7: Three Variable Stratified,Pop C
 pop7 <- popC
 
@@ -696,7 +707,7 @@ mean(pop7$income)
 
 method7 <- function(pop){
   sampList <- list()
-  s_size <- (400-16)/8
+  s_size <- (800-16)/8
   ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1), s_size, replace=FALSE)
   sampList[[1]] <- pop[pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1,][ind,]
   
@@ -779,8 +790,8 @@ p7
 pop8 <- popC
 pop8$income <- 25000 + 
   40000 * pop8$I_age_old +
-  25000 * pop8$I_sex_F * pop8$I_race_B + 
-  30000 * pop8$I_sex_F * pop8$I_age_old +  
+  25000 * pop8$I_sex_F + 
+  30000 * pop8$I_sex_F * pop8$I_race_B +  
   30000 * pop8$I_age_old * pop8$I_race_B * pop8$I_ins_A + 
   20000 * pop8$I_age_old * pop8$I_sex_F * pop8$I_race_B * pop8$I_ins_A +
   rnorm(N,0,5000)
@@ -989,7 +1000,8 @@ p12 <- ggplot(res12) +
   xlim(50000, 100000)
 p12
 
-# Trial 13: Income Samp, Pop A ----------------------------------------------------------------
+
+# Trial 13: Income Samp (2 lvls), 4 Var Strat, Pop A ----------------------------------------------------------------
 pop13 <- popA
 
 pop13$income <- 25000 + 
@@ -1001,14 +1013,14 @@ pop13$income <- 25000 +
   rnorm(N,0,5000)
 mean(pop13$income)
 
-#note: half of incomes are above 80k!
-method13 <- function(pop){
 
-  low_income <- subset(pop, income < mean(pop$income))
-  high_income <- subset(pop, income > mean(pop$income))
-  low_samp <- sample_frac(low_income, 300/length(low_income$income), replace = FALSE)
+method13 <- function(pop){
+  low_income <- subset(pop, income < 70000)
+  high_income <- subset(pop, income >= 70000)
+  low_samp <- sample_frac(low_income, (300-16)/length(low_income$income), replace = FALSE)
   high_samp <- sample_frac(high_income, 100/length(high_income$income), replace = FALSE)
-  samp <- rbind(low_samp, high_samp)
+  sampcheck <- sample_n(pop, 1, replace = FALSE)
+  samp <- rbind(low_samp, high_samp, sampcheck)
   #sampFreqtest <- summarise(samp, count=n()/length(samp$income))
   return(samp)
 }
@@ -1025,12 +1037,13 @@ res13 <- subset(gather(restrial13$res), key != "popMean")
 p13 <- ggplot(res13) +
   geom_vline(xintercept = mean(pop13$income), color = "orange") +
   geom_histogram(aes(x = value, fill = key), bins=100) +
-  ggtitle("4 Var Stratified Samp, Pop A") +
+  ggtitle("Income (2 lvls) 4 Var Stratified Samp, Pop A") +
   xlim(50000, 100000)
 p13
 
 
-# Trial 14: ????, Pop A ----------------------------------------------------------------
+# Trial 14: Income Biased 3 Var Strat, Pop A ----------------------------------------------------------------
+## samples more lower incomes
 pop14 <- popA
 
 pop14$income <- 25000 + 
@@ -1044,20 +1057,15 @@ mean(pop14$income)
 
 
 method14 <- function(pop){
-  low_income <- subset(pop, income < 40000)
-  medium_income <- subset(pop, income > 40000 & income < 60000)
-  high_income <- subset(pop, income > 80000)
-  
-  low_samp <- sample_frac(low_income, 200/length(low_income$income), replace = FALSE)
-  medium_samp <- sample_frac(medium_income, 100/length(medium_income$income), replace = FALSE)
-  high_samp <- sample_frac(high_income, (100-16)/length(high_income$income), replace = FALSE)
-  
-  #make sure at least 1 from each group in sample
-  check_samp <- sample_n(pop, 1, replace = FALSE)
-  samp <- rbind(low_samp, medium_samp, high_samp, check_samp)
+  pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+  sampcheck <- sample_n(pop, 1, replace = FALSE, weight = income)
+  pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B)
+  samp <- bind_rows(sampcheck, sample_n(pop, (400-16)/8, replace = FALSE, weight = 1/income))
+  samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
   sampFreqtest <- summarise(samp, count=n()/length(samp$income))
-  return(sampFreqtest)
+  return(samp)
 }
+method14(pop14)
 
 restrial14 <- resfunc(pop14, method14)
 
@@ -1071,15 +1079,134 @@ res14 <- subset(gather(restrial14$res), key != "popMean")
 p14 <- ggplot(res14) +
   geom_vline(xintercept = mean(pop14$income), color = "orange") +
   geom_histogram(aes(x = value, fill = key), bins=100) +
-  ggtitle("Sample on Income, Pop A") +
+  ggtitle("Income Biased 3 Var Strat, Pop A") +
   xlim(50000, 100000)
 p14
 
 
+# Trial 15: Income & Insurance Biased Sampling, Pop A ----------------------------------------------------------------
+pop15 <- popA
+
+pop15$income <- 25000 + 
+  40000 * pop15$I_age_old +
+  25000 * pop15$I_sex_F * pop15$I_race_B + 
+  30000 * pop15$I_sex_F * pop15$I_age_old +  
+  30000 * pop15$I_age_old * pop15$I_race_B * pop15$I_ins_A + 
+  20000 * pop15$I_age_old * pop15$I_sex_F * pop15$I_race_B * pop15$I_ins_A +
+  rnorm(N,0,5000)
+mean(pop15$income)
+
+method15 <- function(pop){
+  pop <- pop %>% mutate(i_weight = ifelse(income < 50000, income/max(income) * 10 + 2 * I_ins_A, income/max(income) + 2* I_ins_A))
+  pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+  sampcheck <- sample_n(pop, 1, replace = FALSE, weight = i_weight)
+  pop <- ungroup(pop)
+  samp <- sample_n(pop, (400-16), replace = FALSE, weight = i_weight)
+  samp <- bind_rows(sampcheck, samp)
+  sampFreqtest <- summarise(samp, count=n()/length(samp$income))
+  return(samp)
+}
+
+restrial15 <- resfunc(pop15, method15)
+
+resbias15 <- restrial15$res
+resbias15$biasPS <- resbias15$sampPSmean-resbias15$popMean
+resbias15$biasrake <- resbias15$samprakemean-resbias15$popMean
+resbias15$biasPR <- resbias15$sampPRmean-resbias15$popMean
+apply(resbias15,2,mean)
+
+res15 <- subset(gather(restrial15$res), key != "popMean")
+p15 <- ggplot(res15) +
+  geom_vline(xintercept = mean(pop15$income), color = "orange") +
+  geom_histogram(aes(x = value, fill = key), bins=100) +
+  ggtitle("Income & Ins Samp, Pop A") +
+  xlim(50000, 100000)
+p15
+
+
+# Trial 16: 4 Var Strat, Pop A, Ins X ----------------------------------
+pop16 <- popA
+
+pop16$income <- 25000 + 
+  20000 * pop16$I_age_old +
+  25000 * pop16$I_sex_F +
+  30000 * pop16$I_sex_F * pop16$I_age_old +  
+  30000 * pop16$I_age_old * pop16$I_ins_A + 
+  40000 * pop16$I_age_old * pop16$I_sex_F * pop16$I_race_B * pop16$I_ins_A +
+  rnorm(N,0,5000)
+mean(pop16$income)
+
+
+method16 <- function(pop){
+  pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+  samp <- sample_n(pop, 400/16, replace = FALSE)
+  return(samp)
+}
+
+restrial16 <- resfunc(pop16, method16)
+
+resbias16 <- restrial16$res
+resbias16$biasPS <- resbias16$sampPSmean-resbias16$popMean
+resbias16$biasrake <- resbias16$samprakemean-resbias16$popMean
+resbias16$biasPR <- resbias16$sampPRmean-resbias16$popMean
+apply(resbias16,2,mean)
+
+res16 <- subset(gather(restrial16$res), key != "popMean")
+p16 <- ggplot(res16) +
+  geom_vline(xintercept = mean(pop16$income), color = "orange") +
+  geom_histogram(aes(x = value, fill = key), bins=100) +
+  ggtitle("Income X, Pop A") +
+  xlim(50000, 110000)
+p16
+
+
+# Trial 17: 4 Var Strat, Pop A, Ins Y ----------------------------------
+pop17 <- popA
+
+pop17$income <- 25000 + 
+  20000 * pop17$I_age_old +
+  25000 * pop17$I_sex_F +
+  15000 * pop17$I_ins_A +
+  35000 * pop17$I_sex_F * pop17$I_age_old +  
+  10000 * pop17$I_age_old * pop17$I_ins_A + 
+  10000 * pop17$I_age_old * pop17$I_sex_F * pop17$I_race_B * pop17$I_ins_A +
+  rnorm(N,0,5000)
+mean(pop17$income)
+
+
+method17 <- function(pop){
+  pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+  samp <- sample_n(pop, 400/16, replace = FALSE)
+  return(samp)
+}
+
+restrial17 <- resfunc(pop17, method17)
+
+resbias17 <- restrial17$res
+resbias17$biasPS <- resbias17$sampPSmean-resbias17$popMean
+resbias17$biasrake <- resbias17$samprakemean-resbias17$popMean
+resbias17$biasPR <- resbias17$sampPRmean-resbias17$popMean
+apply(resbias17,2,mean)
+
+res17 <- subset(gather(restrial17$res), key != "popMean")
+p17 <- ggplot(res17) +
+  geom_vline(xintercept = mean(pop17$income), color = "orange") +
+  geom_histogram(aes(x = value, fill = key), bins=100) +
+  ggtitle("Income Y, Pop A") +
+  xlim(50000, 110000)
+p17
+
+
+### bias population, stratified AND biased (income?) sampling
+### income w/ multiple levels or base sampling liklihood based on income 
+
+allplots <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+save(allplots, file="/Users/joylee/Research Project/ConditionalRaking/CRplots.rda")
 
 
 library(gridExtra)
-grid.arrange(p1, p2, p3, p4, p5, p6, nrow=2)
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, nrow=4)
+grid.arrange(p1, p2, p3, p13, p14, p15, nrow=2)
 grid.arrange(p1, p4, p7, p10, nrow=2)
 grid.arrange(p2, p5, p8, p11, nrow=2)
 grid.arrange(p3, p5, p9, p12, nrow=2)
