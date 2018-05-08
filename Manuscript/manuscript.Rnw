@@ -10,55 +10,59 @@
 \usepackage[margin=1.45in]{geometry}
 
 
-\startlocaldefs
-\newcommand{\blind}{Three anonymous authors}
+% \startlocaldefs
+% \newcommand{\blind}{Three anonymous authors}
+% 
+% \newcommand{\Ex}{\mathbb{E}}
+% \newcommand{\Var}{\text{Var}}
+% \newcommand{\bp}{\mathbf{p}}
+% 
+% \newcommand{\R}{\textsf{R}\xspace}
+% \newcommand{\pkg}[1]{\texttt{#1}\xspace}
+% 
+% \definecolor{orange}{rgb}{1, 0.5, 0}
 
-\newcommand{\Ex}{\mathbb{E}}
-\newcommand{\Var}{\text{Var}}
-\newcommand{\bp}{\mathbf{p}}
+% \newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
+% \newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
+% \newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
 
-\newcommand{\R}{\textsf{R}\xspace}
-\newcommand{\pkg}[1]{\texttt{#1}\xspace}
+% \def\balpha{\pmb{\alpha}}
+% \def\btheta{\pmb{\theta}}
+% \def\bgamma{\pmb{\gamma}}
+% \def\btheta{\pmb{\theta}}
+% \def\bphi{\pmb{\phi}}
+% \def\bpsi{\pmb{\psi}}
+% \def\bB{\pmb{B}}
+% \def\bD{\pmb{D}}
+% \def\bH{\pmb{H}}
+% \def\bS{\pmb{S}}
+% \def\bX{\pmb{X}}
 
-\definecolor{orange}{rgb}{1, 0.5, 0}
-
-\newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
-\newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
-\newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
-
-\def\balpha{\pmb{\alpha}}
-\def\btheta{\pmb{\theta}}
-\def\bgamma{\pmb{\gamma}}
-\def\btheta{\pmb{\theta}}
-\def\bphi{\pmb{\phi}}
-\def\bpsi{\pmb{\psi}}
-\def\bB{\pmb{B}}
-\def\bD{\pmb{D}}
-\def\bH{\pmb{H}}
-\def\bS{\pmb{S}}
-\def\bX{\pmb{X}}
-
-\endlocaldefs
+% \endlocaldefs
 
 
 
 \begin{document}
-%\SweaveOpts{concordance=TRUE}
+\SweaveOpts{concordance=TRUE}
+
 
 \begin{frontmatter}
 
 \title{Conditional Raking}
 \runtitle{Conditional Raking}
 
-
-
-\author{\fnms{Emily M.} \snm{Kotnik}\ead[label=e1]{}}
+\author{\fnms{Joy H.} \snm{Lee}\ead[label=e1]{}}
 \address{\printead{e1}}
 \affiliation{Loyola University Chicago}
 
 \and
-\author{\fnms{Gregory J.} \snm{Matthews}\corref{}\ead[label=e2]{gmatthews1@luc.edu}}
+\author{\fnms{Emily M.} \snm{Kotnik}\ead[label=e3]{}}
 \address{\printead{e2}}
+\affiliation{Loyola University Chicago}
+
+\and
+\author{\fnms{Gregory J.} \snm{Matthews}\corref{}\ead[label=e3]{gmatthews1@luc.edu}}
+\address{\printead{e3}}
 \affiliation{Loyola University Chicago}
 
 

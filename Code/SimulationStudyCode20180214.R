@@ -13,6 +13,8 @@ expit <- function(x){
   return(out)
 }
 
+#pop: data.frame and contains the true population
+#sampmethod: function
 resfunc <- function(pop, sampmethod){
   set.seed(89)
   
@@ -230,7 +232,9 @@ pop1$income <- 25000 +
   20000 * pop1$I_age_old * pop1$I_sex_F * pop1$I_race_B * pop1$I_ins_A +
   rnorm(N,0,5000)
 
+
 method1 <- function(pop){
+  sampList <- list()
   s_size <- 400/8
   ind <- sample(1:sum(pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1), s_size, replace=FALSE)
   sampList[[1]] <- pop[pop$I_age_old==1 & pop$I_sex_F==1 & pop$I_race_B == 1,][ind,]
@@ -270,12 +274,14 @@ apply(resbias1,2,mean)
 res1 <- subset(gather(restrial1$res), key != "popMean")
 
 p1 <- ggplot(res1) +
-  geom_vline(xintercept = mean(pop3$income), color = "orange") +
+  geom_vline(xintercept = mean(pop1$income), color = "orange") +
   geom_histogram(aes(x = value, fill = key), bins = 100) +
   ggtitle("3 var Stratified Samp") +
   xlim(60000, 100000) +
   ylim(0, 100)
 p1
+
+
 
 ### balanced pop?
 pop1Freq <- pop1 %>% summarise(realcount = n())
@@ -339,7 +345,7 @@ apply(resbias2,2,mean)
 
 res2 <- subset(gather(restrial2$res), key != "popMean")
 p2 <- ggplot(res2) +
-  geom_vline(xintercept = mean(pop3$income), color = "orange") +
+  geom_vline(xintercept = mean(pop2$income), color = "orange") +
   geom_histogram(aes(x = value, fill = key), bins=100) +
   ggtitle("using sample_n") +
   xlim(60000, 100000) + 
