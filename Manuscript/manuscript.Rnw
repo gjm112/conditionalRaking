@@ -46,6 +46,8 @@
 \SweaveOpts{concordance=TRUE}
 
 
+
+
 \begin{frontmatter}
 
 \title{Conditional Raking}
@@ -110,10 +112,15 @@ Variance estimate?
 
 \section{Simulation Study}
 \subsection{Simple k=3, l=2 case}
-<<>>=
-hist(rnorm(100))
+
+
+<<echo = FALSE>>=
+load("~/Dropbox/conditionalRaking/Manuscript/CRplots.rda")
 @
 
+<<fig=TRUE, echo = FALSE>>=
+allplots[[1]]
+@
 
 \subsection{More complicated case}
 
