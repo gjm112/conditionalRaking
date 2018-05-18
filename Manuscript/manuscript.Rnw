@@ -21,11 +21,19 @@
 % \newcommand{\pkg}[1]{\texttt{#1}\xspace}
 % 
 % \definecolor{orange}{rgb}{1, 0.5, 0}
+<<<<<<< HEAD
 % 
 % \newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
 % \newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
 % \newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
 % 
+=======
+
+% \newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
+% \newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
+% \newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
+
+>>>>>>> 8fcde199a24aa0d6c12973fa92a5d68bd38f1766
 % \def\balpha{\pmb{\alpha}}
 % \def\btheta{\pmb{\theta}}
 % \def\bgamma{\pmb{\gamma}}
@@ -108,7 +116,17 @@ Variance estimate?
 \section{Simulation Study}
 \subsection{Simple k=3, l=2 case}
 
+<<<<<<< HEAD
+=======
 
+<<echo = FALSE>>=
+load("~/Dropbox/conditionalRaking/Manuscript/CRplots.rda")
+@
+>>>>>>> 8fcde199a24aa0d6c12973fa92a5d68bd38f1766
+
+<<fig=TRUE, echo = FALSE>>=
+allplots[[1]]
+@
 
 \subsection{More complicated case}
 A population of 100,000 observations with 4 binary variables was created blah blah

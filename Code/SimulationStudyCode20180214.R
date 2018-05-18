@@ -13,11 +13,16 @@ expit <- function(x){
   return(out)
 }
 
+<<<<<<< HEAD
+#pop: data.frame and contains the true population
+#sampmethod: function
+=======
 
 # function for sample stats
 # inputs   pop = population df, sampmethod = sampling function
 # returns  list of res=mean results,  results=raw results, allSamp = dataframe of all the samples
 
+>>>>>>> 82eb7eff85d389ffdffe04c22d728994fa082b11
 resfunc <- function(pop, sampmethod){
   set.seed(89)
   
@@ -248,6 +253,7 @@ pop1$income <- 25000 +
   20000 * pop1$I_age_old * pop1$I_sex_F * pop1$I_race_B * pop1$I_ins_A +
   rnorm(N,0,5000)
 
+
 method1 <- function(pop){
   sampList <- list()
   s_size <- 400/8
@@ -296,6 +302,8 @@ p1 <- ggplot(res1) +
   xlim(50000, 100000) +
   ylim(0, 100)
 p1
+
+
 
 ### balanced pop?
 pop1Freq <- pop1 %>% summarise(realcount = n())
