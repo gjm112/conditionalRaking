@@ -13,16 +13,11 @@ expit <- function(x){
   return(out)
 }
 
-<<<<<<< HEAD
-#pop: data.frame and contains the true population
-#sampmethod: function
-=======
 
 # function for sample stats
 # inputs   pop = population df, sampmethod = sampling function
 # returns  list of res=mean results,  results=raw results, allSamp = dataframe of all the samples
 
->>>>>>> 82eb7eff85d389ffdffe04c22d728994fa082b11
 resfunc <- function(pop, sampmethod){
   set.seed(89)
   
@@ -84,53 +79,54 @@ resfunc <- function(pop, sampmethod){
     ###############################
     #partial raking
     ###############################
-    trueage <- wpct(pop$I_age_old)
-    targets <- list(trueage)
-    names(targets) <- c("I_age_old")
-    
-    #anesrakefinder(targets, samp, choosemethod = "total")
-    # Raking starts here.  
+    # know sex & race, race & age, age & ins
     samp$caseid <- 1:nrow(samp)
+    samp$I_race_age <- as.factor(samp$I_race_age)
     
-    samp$I_age_old <- as.factor(samp$I_age_old)
+    trueraceage <- wpct(pop$I_race_age)
+    targets <- list(trueraceage)
+    names(targets) <- c("I_race_age")
+    
+    # PS on race & age
     
     anes <- anesrake(targets, samp, caseid= samp$caseid, cap= 20, choosemethod = "total")
     samp$prweight <- anes$weightvec
     
-    samp$I_sex_race <- 0
-    
-    # adding combined sex $ race variable
-    samp <- samp %>% 
-      mutate(I_sex_race = ifelse(I_sex_F ==0 & I_race_B ==0, 1,
-                                 ifelse(I_sex_F ==0 & I_race_B == 1, 2,
-                                        ifelse(I_sex_F==1 & I_race_B ==0, 3, 4))))
-    
-    # creating a copy of the pop df w/ combined sex & race variable
-    popcopy <- pop %>% 
-      mutate(I_sex_race = ifelse(I_sex_F ==0 & I_race_B ==0, 1,
-                                 ifelse(I_sex_F ==0 & I_race_B == 1, 2,
-                                        ifelse(I_sex_F==1 & I_race_B ==0, 3, 4))))
-    
-    
+    # Condition on race, PS on sex
     for(j in 0:1){
-      subpop <- subset(popcopy, I_age_old==j)
-      truesexracesub <- wpct(subpop$I_sex_race)
-      trueinssub <- wpct(subpop$I_ins_A)
-      subtargets <- list(truesexracesub, trueinssub)
-      names(subtargets) <- c("I_sex_race", "I_ins_A")
-      
-      subsamp<- subset(samp, I_age_old==j)
-      
-      
+      subpop <- subset(pop, I_race_B==j)
+      truesexsub <- wpct(subpop$I_sex_F)
+      subtargets <- list(truesexsub)
+      names(subtargets) <- c("I_sex_F")
+
+      subsamp<- subset(samp, I_race_B==j)
+
       subsamp$caseid <-1:nrow(subsamp)
-      subsamp$I_sex_race <- as.factor(subsamp$I_sex_race)
-      subsamp$I_ins_A <- as.factor(subsamp$I_ins_A)
-      
-      
+      subsamp$I_sex_F <- as.factor(subsamp$I_sex_F)
+
       anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap=20, choosemethod = "total", weightvec=subsamp$prweight,center.baseweights = FALSE)
-      
+
+      samp$prweight[samp$I_race_B==j] <- anes$weightvec
+
+    }
+
+    # Condition on age, PS on insurance
+    for(j in 0:1){
+      subpop <- subset(pop, I_age_old==j)
+      trueinssub <- wpct(subpop$I_ins_A)
+      subtargets <- list(trueinssub)
+      names(subtargets) <- c("I_ins_A")
+
+      subsamp<- subset(samp, I_age_old==j)
+
+
+      subsamp$caseid <-1:nrow(subsamp)
+      subsamp$I_ins_A <- as.factor(subsamp$I_ins_A)
+
+      anes <- anesrake(subtargets, subsamp, caseid= subsamp$caseid, cap=20, choosemethod = "total", weightvec=subsamp$prweight,center.baseweights = FALSE)
+
       samp$prweight[samp$I_age_old==j] <- anes$weightvec
-      
+
     }
     
     results[[i]]<-c(popMean=mean(pop$income), sampMean=mean(samp$income), sampPSmean=weighted.mean(samp$income,samp$psweight), samprakemean=weighted.mean(samp$income,samp$rakeweight),sampPRmean = weighted.mean(samp$income,samp$prweight))
@@ -155,7 +151,7 @@ resfunc <- function(pop, sampmethod){
   return(outputList)
 }
 
-   
+
 ############  Trials   ###################
 ####### Pop A
 popA <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
@@ -168,6 +164,11 @@ popA$I_race_B <- rbinom(N,1,prob = p)
 #Insurance
 p <- expit(0 + 1.2 * popA$I_age_old * popA$I_race_B * popA$I_sex_F)
 popA$I_ins_A <- rbinom(N,1,prob = p)
+
+popA <- popA %>% 
+  mutate(I_race_age = ifelse(I_race_B ==0 & I_age_old ==0, 1,
+                             ifelse(I_race_B ==0 & I_age_old == 1, 2,
+                                    ifelse(I_race_B & I_age_old ==0, 3, 4))))
 
 popA <- popA %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
 popAFreq <- popA %>% summarise(count = n()/N)
@@ -230,19 +231,6 @@ popDFreq
 
 # Trial 1: Three Variable Stratified, Pop A-----------------------------------------------------------------
 
-# pop1 <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
-# #sex
-# p <- expit(0 + 0.9 * pop1$I_age_old)
-# pop1$I_sex_F <- rbinom(N,1,prob = p)
-# #race
-# p <- expit(1 + 0.9 * pop1$I_age_old * pop1$I_sex_F)
-# pop1$I_race_B <- rbinom(N,1,prob = p)
-# #Insurance
-# p <- expit(0 + 1.2 * pop1$I_age_old * pop1$I_race_B * pop1$I_sex_F)
-# pop1$I_ins_A <- rbinom(N,1,prob = p)
-# pop1 <- pop1 %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-# pop1Freq <- pop1 %>% summarise(count = n()/N)
-# pop1Freq
 pop1 <- popA
 
 pop1$income <- 25000 + 
@@ -252,7 +240,6 @@ pop1$income <- 25000 +
   30000 * pop1$I_age_old * pop1$I_race_B * pop1$I_ins_A + 
   20000 * pop1$I_age_old * pop1$I_sex_F * pop1$I_race_B * pop1$I_ins_A +
   rnorm(N,0,5000)
-
 
 method1 <- function(pop){
   sampList <- list()
@@ -303,8 +290,6 @@ p1 <- ggplot(res1) +
   ylim(0, 100)
 p1
 
-
-
 ### balanced pop?
 pop1Freq <- pop1 %>% summarise(realcount = n())
 pop1Freq$count <- pop1Freq$realcount/N
@@ -328,19 +313,7 @@ chisq1meanp   # 4.415979e-42
 
 
 # Trial 2: Four variable Strat, Pop A ---------------------------------------
-# 2: uses sample_n
-
-# #age
-# pop2 <- data.frame(I_age_old = rbinom(N, 1, 0.6), I_sex_F = 0, I_race_B = 0, I_ins_A = 0)
-# #sex
-# p <- expit(0 + 0.9 * pop2$I_age_old)
-# pop2$I_sex_F <- rbinom(N,1,prob = p)
-# #race
-# p <- expit(1 + 0.9 * pop2$I_age_old * pop2$I_sex_F)
-# pop2$I_race_B <- rbinom(N,1,prob = p)
-# #Insurance
-# p <- expit(0 + 1.2 * pop2$I_age_old * pop2$I_race_B * pop2$I_sex_F)
-# pop2$I_ins_A <- rbinom(N,1,prob = p)
+####### 2: uses sample_n
 
 pop2 <- popA
 pop2 <- pop2 %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
@@ -676,7 +649,7 @@ method6 <- function(pop){
   sampList[[2]] <- sample_n(pop, 1, replace = FALSE)
   samp <- do.call(rbind, sampList)
   return(samp)
-  }
+}
 
 restrial6 <- resfunc(pop6, method6)
 
