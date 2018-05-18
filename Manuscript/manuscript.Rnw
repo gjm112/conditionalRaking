@@ -106,7 +106,6 @@ Though post stratification and raking have their uses in correcting data collect
 
 
 \section{Methods}
-Consider a data set with $n$ observations and $p$ variables that is a sample from a population $P$.  There are $k\le p$ stratifying variables where there is at least some information about the joint population distribution of these $k$ variables.  That is we know based on auxilliary information the population counts of specified combinations of these $k$ variables.  
 Consider a data set with $n$ observations and $p$ variables that is a sample from a population $P$.  There are $k\le p$ stratifying variables where there is at least some information about the (joint?) population distribution of these $k$ variables.  That is we know based on auxilliary information the population counts of specified combinations of these $k$ variables.  When the full joint distribuention of the $k$ stratifying variables is known post-stratification can be applied whereas when only the marginal counts are known for the $k$ stratifiers, raking can be applied.  The settings that are considered here are intermediate between post-stratification and raking in that the marginal counts are known along with some information about the joint distribution, but not the full distribution.  
 
 
