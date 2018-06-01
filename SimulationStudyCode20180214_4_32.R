@@ -5,6 +5,7 @@ library(anesrake)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(survey)
 
 N<-100000     # population size
 set.seed(89)
@@ -31,6 +32,11 @@ resfunc <- function(pop, sampmethod){
   allSampFreq <- list()
   resultsLM <- list()
   resultsLM[["lmRaw"]] <- resultsLM[["lmPS"]] <- resultsLM[["lmRake"]] <- resultsLM[["lmPR"]] <- matrix(NA, ncol=5,nrow=nsim)
+  CI <- data.frame(unadjusted_length=numeric(), unadjusted_coverage=numeric(),
+                   PS_length=numeric(), PS_coverage=numeric(),
+                   rake_length=numeric(), rake_coverage=numeric(),
+                   PR_length=numeric(), PR_coverage=numeric())
+  
   for (i in 1:nsim){
     
     sampList <- list()
@@ -38,7 +44,8 @@ resfunc <- function(pop, sampmethod){
     
     ###### check sample makeup, order by groups, add to output list
     samp <- samp %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-    sampFreq <- samp %>% summarise(count = n()/nrow(samp))
+    sampFreq <- samp %>% summarise(count = n())
+    sampFreq$proportion <- sampFreq$count / length(samp$income)
     #sampFreq
     
     allSamp[[i]] <- samp
@@ -49,11 +56,12 @@ resfunc <- function(pop, sampmethod){
     # post strat
     ###############################
     pop <- pop %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
-    popFreq <- pop %>% summarise(count = n()/N)
+    popFreq <- pop %>% summarise(count = n())
+    popFreq$proportion <- popFreq$count / N
     
-    sampFreq$psweight <- popFreq$count/sampFreq$count
+    sampFreq$psweight <- popFreq$proportion/sampFreq$proportion
+    sampFreq$popcount <- popFreq$count
     samp<-merge(samp,sampFreq, by.x = c("I_age_old","I_sex_F","I_race_B", "I_ins_A"), by.y = c("I_age_old","I_sex_F","I_race_B", "I_ins_A"),all.x=TRUE)
-    
     
     ###############################
     # raking
@@ -143,12 +151,43 @@ resfunc <- function(pop, sampmethod){
     resultsLM[["lmRake"]][i,] <- lm(income~I_age_old + I_sex_F + I_race_B + I_ins_A,data=samp,weight=rakeweight)$coefficients
     resultsLM[["lmPR"]][i,] <-lm(income~I_age_old + I_sex_F + I_race_B + I_ins_A,data=samp,weight=prweight)$coefficients
     
+    #unadjusted CI
+    # sampL <- mean(samp$income) - 1.966 * (sd(samp$income)/sqrt(400))
+    # sampU <- mean(samp$income) + 1.966 * (sd(samp$income)/sqrt(400))
+    # CI[i,]$unadjusted_length <- sampU - sampL
+    # CI[i,]$unadjusted_coverage <- ifelse(mean(pop$income) > sampL & mean(pop$income) < sampU, 1, 0)
+    udesign <- svydesign(id = ~1, data = samp) #, fpc = ~popcount)
+    umean <- svymean(~income, udesign, df=degf(udesign))
+    u_CI <- confint(umean)
+    CI[i,]$unadjusted_length <- u_CI[2] - u_CI[1]
+    CI[i,]$unadjusted_coverage <- ifelse(mean(pop$income) > u_CI[1] & mean(pop$income) < u_CI[2], 1, 0)
     
+    #PS CI
+    testPSdesign <- svydesign(id = ~1, weights = ~psweight, data = samp, fpc = ~popcount)
+    testPSmean <- svymean(~income, testPSdesign, df = degf(testPSdesign))
+    PS_CI <- confint(testPSmean)
+    CI[i,]$PS_length <- PS_CI[2] - PS_CI[1]
+    CI[i,]$PS_coverage <- ifelse(mean(pop$income) > PS_CI[1] & mean(pop$income) < PS_CI[2], 1, 0)
+    
+    #Raking CI
+    rakedesign <- svydesign(id = ~1, weights = ~rakeweight, data = samp, fpc = ~popcount)
+    rakemean <- svymean(~income, rakedesign, df = degf(rakedesign))
+    rake_CI <- confint(rakemean)
+    CI[i,]$rake_length <- rake_CI[2] - rake_CI[1]
+    CI[i,]$rake_coverage <- ifelse(mean(pop$income) > rake_CI[1] & mean(pop$income) < rake_CI[2], 1, 0)
+    
+    #Partial Raking CI
+    ## nooooo idea if this is at all logical
+    PRdesign <- svydesign(id = ~1, weights = ~prweight, data = samp, fpc = ~popcount)
+    PRmean <- svymean(~income, PRdesign, df = degf(PRdesign))
+    PR_CI <- confint(PRmean)
+    CI[i,]$PR_length <- PR_CI[2] - PR_CI[1]
+    CI[i,]$PR_coverage <- ifelse(mean(pop$income) > PR_CI[1] & mean(pop$income) < PR_CI[2], 1, 0)
   }
-  res<-as.data.frame(do.call(rbind,results))
+  res <- as.data.frame(do.call(rbind,results))
   
-  # res = means df, results = means list, allSamp = df of all the samples
-  outputList <- list("res" = res, "results" = results, "allSamp" = allSamp)
+  # res = means df, results = means list, allSamp = df of all the samples, CI = df of CIs
+  outputList <- list("res" = res, "results" = results, "allSamp" = allSamp, "CI" = CI)
   return(outputList)
 }
 
@@ -308,19 +347,17 @@ resMSE1$rake <- resMSE1$biasrake^2
 resMSE1$PR <- resMSE1$biasPR^2
 MSE1 <- apply(resMSE1, 2, mean)
 
-resCI1 <- resbias1[,1:5]
-resCI1$sampL <- resCI1$sampMean - 1.96 * (sd(pop1$income)/sqrt(400))
-resCI1$sampU <- resCI1$sampMean + 1.96 * (sd(pop1$income)/sqrt(400))
-resCI1$samplength <- 2*1.96*(sd(pop1$income)/sqrt(400))
-resCI1 <- resCI1 %>% mutate(sampcoverage = ifelse(popMean > sampL & popMean < sampU, 1, 0)) 
+resCI1 <- restrial1$CI
+CI1 <- apply(resCI1, 2, mean)
 
 dat1 <- data.frame(trial=numeric(), method=character(), bias=numeric(), percentBias=numeric(), MSE=numeric(), ci_length=numeric(), ci_coverage=numeric(),
-                   stringsAsFactors=FALSE)
-dat1[1,] <- list(1, "unadjusted", bias1[6], bias1[7], MSE1["samp"], mean(resCI1$samplength), sum(resCI1$sampcoverage)/length(resCI1$sampcoverage))
-dat1[2,] <- list(1, "PS", bias1[8], bias1[9], MSE1["PS"], NA, NA)
-dat1[3,] <- list(1, "Rake", bias1[10], bias1[11], MSE1["rake"], NA, NA)
-dat1[4,] <- list(1, "PR", bias1[12], bias1[13], MSE1["PR"], NA, NA)
+                    stringsAsFactors=FALSE)
+dat1[1,] <- list(1, "unadjusted", bias1[6], bias1[7], MSE1["samp"], CI1[1], CI1[2])
+dat1[2,] <- list(1, "PS", bias1[8], bias1[9], MSE1["PS"], CI1[3], CI1[4])
+dat1[3,] <- list(1, "Rake", bias1[10], bias1[11], MSE1["rake"], CI1[5], CI1[6])
+dat1[4,] <- list(1, "PR", bias1[12], bias1[13], MSE1["PR"], CI1[7], CI1[8])
 dat1
+
 
 res1 <- subset(gather(restrial1$res), key != "popMean")
 
@@ -396,18 +433,15 @@ resMSE2$rake <- resMSE2$biasrake^2
 resMSE2$PR <- resMSE2$biasPR^2
 MSE2 <- apply(resMSE2, 2, mean)
 
-resCI2 <- resbias2[,1:5]
-resCI2$sampL <- resCI2$sampMean - 1.96 * (sd(pop2$income)/sqrt(400))
-resCI2$sampU <- resCI2$sampMean + 1.96 * (sd(pop2$income)/sqrt(400))
-resCI2$samplength <- 2*1.96*(sd(pop2$income)/sqrt(400))
-resCI2 <- resCI2 %>% mutate(sampcoverage = ifelse(popMean > sampL & popMean < sampU, 1, 0)) 
+resCI2 <- restrial2$CI
+CI2 <- apply(resCI2, 2, mean)
 
 dat2 <- data.frame(trial=numeric(), method=character(), bias=numeric(), percentBias=numeric(), MSE=numeric(), ci_length=numeric(), ci_coverage=numeric(),
-                   stringsAsFactors=FALSE)
-dat2[1,] <- list(2, "unadjusted", bias2[6], bias2[7], MSE2["samp"], mean(resCI2$samplength), sum(resCI2$sampcoverage)/length(resCI2$sampcoverage))
-dat2[2,] <- list(2, "PS", bias2[8], bias2[9], MSE2["PS"], NA, NA)
-dat2[3,] <- list(2, "Rake", bias2[10], bias2[11], MSE2["rake"], NA, NA)
-dat2[4,] <- list(2, "PR", bias2[12], bias2[13], MSE2["PR"], NA, NA)
+                    stringsAsFactors=FALSE)
+dat2[1,] <- list(2, "unadjusted", bias2[6], bias2[7], MSE2["samp"], CI2[1], CI2[2])
+dat2[2,] <- list(2, "PS", bias2[8], bias2[9], MSE2["PS"], CI2[3], CI2[4])
+dat2[3,] <- list(2, "Rake", bias2[10], bias2[11], MSE2["rake"], CI2[5], CI2[6])
+dat2[4,] <- list(2, "PR", bias2[12], bias2[13], MSE2["PR"], CI2[7], CI2[8])
 dat2
 
 
@@ -484,20 +518,16 @@ resMSE3$rake <- resMSE3$biasrake^2
 resMSE3$PR <- resMSE3$biasPR^2
 MSE3 <- apply(resMSE3, 2, mean)
 
-resCI3 <- resbias3[,1:5]
-resCI3$sampL <- resCI3$sampMean - 1.96 * (sd(pop3$income)/sqrt(400))
-resCI3$sampU <- resCI3$sampMean + 1.96 * (sd(pop3$income)/sqrt(400))
-resCI3$samplength <- 2*1.96*(sd(pop3$income)/sqrt(400))
-resCI3 <- resCI3 %>% mutate(sampcoverage = ifelse(popMean > sampL & popMean < sampU, 1, 0)) 
+resCI3 <- restrial3$CI
+CI3 <- apply(resCI3, 2, mean)
 
 dat3 <- data.frame(trial=numeric(), method=character(), bias=numeric(), percentBias=numeric(), MSE=numeric(), ci_length=numeric(), ci_coverage=numeric(),
-                   stringsAsFactors=FALSE)
-dat3[1,] <- list(3, "unadjusted", bias3[6], bias3[7], MSE3["samp"], mean(resCI3$samplength), sum(resCI3$sampcoverage)/length(resCI3$sampcoverage))
-dat3[2,] <- list(3, "PS", bias3[8], bias3[9], MSE3["PS"], NA, NA)
-dat3[3,] <- list(3, "Rake", bias3[10], bias3[11], MSE3["rake"], NA, NA)
-dat3[4,] <- list(3, "PR", bias3[12], bias3[13], MSE3["PR"], NA, NA)
+                    stringsAsFactors=FALSE)
+dat3[1,] <- list(3, "unadjusted", bias3[6], bias3[7], MSE3["samp"], CI3[1], CI3[2])
+dat3[2,] <- list(3, "PS", bias3[8], bias3[9], MSE3["PS"], CI3[3], CI3[4])
+dat3[3,] <- list(3, "Rake", bias3[10], bias3[11], MSE3["rake"], CI3[5], CI3[6])
+dat3[4,] <- list(3, "PR", bias3[12], bias3[13], MSE3["PR"], CI3[7], CI3[8])
 dat3
-
 
 res3 <- subset(gather(restrial3$res), key != "popMean")
 hist3 <- ggplot(res3) +  
@@ -1567,7 +1597,7 @@ hist16 <- ggplot(res16) +
 hist16
 
 
-# Trial 16: 4 Var Strat, Pop A, Ins Y ----------------------------------
+# Trial 17: 4 Var Strat, Pop A, Ins Y ----------------------------------
 pop17 <- popA
 
 pop17$income <- 25000 + 
@@ -1607,18 +1637,15 @@ resMSE17$rake <- resMSE17$biasrake^2
 resMSE17$PR <- resMSE17$biasPR^2
 MSE17 <- apply(resMSE17, 2, mean)
 
-resCI17 <- resbias17[,1:5]
-resCI17$sampL <- resCI17$sampMean - 1.96 * (sd(pop17$income)/sqrt(400))
-resCI17$sampU <- resCI17$sampMean + 1.96 * (sd(pop17$income)/sqrt(400))
-resCI17$samplength <- 2*1.96*(sd(pop17$income)/sqrt(400))
-resCI17 <- resCI17 %>% mutate(sampcoverage = ifelse(popMean > sampL & popMean < sampU, 1, 0)) 
+resCI17 <- restrial17$CI
+CI17 <- apply(resCI17, 2, mean)
 
 dat17 <- data.frame(trial=numeric(), method=character(), bias=numeric(), percentBias=numeric(), MSE=numeric(), ci_length=numeric(), ci_coverage=numeric(),
                     stringsAsFactors=FALSE)
-dat17[1,] <- list(17, "unadjusted", bias17[6], bias17[7], MSE17["samp"], mean(resCI17$samplength), sum(resCI17$sampcoverage)/length(resCI17$sampcoverage))
-dat17[2,] <- list(17, "PS", bias17[8], bias17[9], MSE17["PS"], NA, NA)
-dat17[3,] <- list(17, "Rake", bias17[10], bias17[11], MSE17["rake"], NA, NA)
-dat17[4,] <- list(17, "PR", bias17[12], bias17[13], MSE17["PR"], NA, NA)
+dat17[1,] <- list(17, "unadjusted", bias17[6], bias17[7], MSE17["samp"], CI17[1], CI17[2])
+dat17[2,] <- list(17, "PS", bias17[8], bias17[9], MSE17["PS"], CI17[3], CI17[4])
+dat17[3,] <- list(17, "Rake", bias17[10], bias17[11], MSE17["rake"], CI17[5], CI17[6])
+dat17[4,] <- list(17, "PR", bias17[12], bias17[13], MSE17["PR"], CI17[7], CI17[8])
 dat17
 
 res17 <- subset(gather(restrial17$res), key != "popMean")
