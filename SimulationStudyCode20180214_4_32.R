@@ -175,25 +175,25 @@ resfunc <- function(pop, sampmethod){
     ps_total <- 0
     for(i in 1:16){
       ps_total = ps_total + (ps_both$popcount[i] / N)^2 / ps_both$count[i] * ps_both$x[i]
-      print((ps_both$popcount[i] / N)^2 / ps_both$count[i] * ps_both$x[i])
+      #print((ps_both$popcount[i] / N)^2 / ps_both$count[i] * ps_both$x[i])
       print(ps_total)
     }
     VAR[i,]$PS_formula <- ps_total
     VAR[i,]$PS_svy <- svyvar(~income, testPSdesign, df=degf(testPSdesign))[1]
     
-    testPSdesign <- svydesign(id = ~1, weight = ~psweight, data = samp, fpc = ~popcount)
+    #testPSdesign <- svydesign(id = ~1, weight = ~psweight, data = samp, fpc = ~popcount)
     sampcopy <- samp
     sampcopy$type <- group_indices(sampcopy, sampcopy$I_age_old, sampcopy$I_sex_F, sampcopy$I_race_B, sampcopy$I_ins_A)     
     PSdesign <- svydesign(id = ~1, weight = ~psweight, data = sampcopy, fpc = ~popcount)
     newPSdesign <- postStratify(PSdesign, ~type, data.frame(type = c(1:16), Freq = popFreq$count))
-    svyvar(~income, newPSdesign, df=degf(newPSdesign))
-    testPSmean <- svymean(~income, testPSdesign, df = degf(testPSdesign))
-    PS_CI <- confint(testPSmean)
+    PSmean <- svymean(~income, newPSdesign, df = degf(newPSdesign))
+    PS_CI <- confint(PSmean)
     CI[i,]$PS_length <- PS_CI[2] - PS_CI[1]
     CI[i,]$PS_coverage <- ifelse(mean(pop$income) > PS_CI[1] & mean(pop$income) < PS_CI[2], 1, 0)
     
     
     #Raking CI
+    #not correct!
     rakedesign <- svydesign(id = ~1, weights = ~rakeweight, data = samp, fpc = ~popcount)
     rakemean <- svymean(~income, rakedesign, df = degf(rakedesign))
     rake_CI <- confint(rakemean)
@@ -201,7 +201,7 @@ resfunc <- function(pop, sampmethod){
     CI[i,]$rake_coverage <- ifelse(mean(pop$income) > rake_CI[1] & mean(pop$income) < rake_CI[2], 1, 0)
     
     #Partial Raking CI
-    ## nooooo idea if this is at all logical
+    #not correct!
     PRdesign <- svydesign(id = ~1, weights = ~prweight, data = samp, fpc = ~popcount)
     PRmean <- svymean(~income, PRdesign, df = degf(PRdesign))
     PR_CI <- confint(PRmean)
