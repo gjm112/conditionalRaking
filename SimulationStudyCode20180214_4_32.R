@@ -36,7 +36,10 @@ resfunc <- function(pop, sampmethod){
                    PS_length=numeric(), PS_coverage=numeric(),
                    rake_length=numeric(), rake_coverage=numeric(),
                    PR_length=numeric(), PR_coverage=numeric())
-  
+  VAR <- data.frame(unadjusted_formula <- numeric(), unadjusted_svy <- numeric(), 
+                    PS_formula <- numeric(), PS_svy <- numeric,
+                    rake_formula <- numeric(), rake_svy <- numeric(), 
+                    PR_formula <- numeric(), PR_svy <- numeric())
   for (i in 1:nsim){
     
     sampList <- list()
@@ -162,12 +165,33 @@ resfunc <- function(pop, sampmethod){
     CI[i,]$unadjusted_length <- u_CI[2] - u_CI[1]
     CI[i,]$unadjusted_coverage <- ifelse(mean(pop$income) > u_CI[1] & mean(pop$income) < u_CI[2], 1, 0)
     
+    #VAR[i,]$unadjusted_formula <- var(samp$income)
+    #VAR[i,]$unadjusted_svy <- svyvar(~income, udesign, df=degf(udesign))[1]
+    
     #PS CI
-    testPSdesign <- svydesign(id = ~1, weights = ~psweight, data = samp, fpc = ~popcount)
+    ps_var <- aggregate(samp$income, list(samp$I_age_old, samp$I_sex_F, samp$I_race_B, samp$I_ins_A), var)
+    ps_means <- aggregate(samp[,7:10], list(samp$I_age_old, samp$I_sex_F, samp$I_race_B, samp$I_ins_A), mean)
+    ps_both <- left_join(ps_var, ps_means, by = c("Group.1", "Group.2", "Group.3", "Group.4"))
+    ps_total <- 0
+    for(i in 1:16){
+      ps_total = ps_total + (ps_both$popcount[i] / N)^2 / ps_both$count[i] * ps_both$x[i]
+      print((ps_both$popcount[i] / N)^2 / ps_both$count[i] * ps_both$x[i])
+      print(ps_total)
+    }
+    VAR[i,]$PS_formula <- ps_total
+    VAR[i,]$PS_svy <- svyvar(~income, testPSdesign, df=degf(testPSdesign))[1]
+    
+    testPSdesign <- svydesign(id = ~1, weight = ~psweight, data = samp, fpc = ~popcount)
+    sampcopy <- samp
+    sampcopy$type <- group_indices(sampcopy, sampcopy$I_age_old, sampcopy$I_sex_F, sampcopy$I_race_B, sampcopy$I_ins_A)     
+    PSdesign <- svydesign(id = ~1, weight = ~psweight, data = sampcopy, fpc = ~popcount)
+    newPSdesign <- postStratify(PSdesign, ~type, data.frame(type = c(1:16), Freq = popFreq$count))
+    svyvar(~income, newPSdesign, df=degf(newPSdesign))
     testPSmean <- svymean(~income, testPSdesign, df = degf(testPSdesign))
     PS_CI <- confint(testPSmean)
     CI[i,]$PS_length <- PS_CI[2] - PS_CI[1]
     CI[i,]$PS_coverage <- ifelse(mean(pop$income) > PS_CI[1] & mean(pop$income) < PS_CI[2], 1, 0)
+    
     
     #Raking CI
     rakedesign <- svydesign(id = ~1, weights = ~rakeweight, data = samp, fpc = ~popcount)
@@ -210,7 +234,7 @@ popA <- popA %>%
                              ifelse(I_race_B ==0 & I_age_old == 1, 2,
                                     ifelse(I_race_B & I_age_old ==0, 3, 4))))
 
-popA <- popA %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A)
+popA <- popA %>% group_by(I_age_old, I_sex_F, I_race_B, I_ins_A, I_race_age)
 popAFreq <- popA %>% summarise(count = n()/N)
 popAFreq
 
@@ -631,18 +655,16 @@ resMSE4$rake <- resMSE4$biasrake^2
 resMSE4$PR <- resMSE4$biasPR^2
 MSE4 <- apply(resMSE4, 2, mean)
 
-resCI4 <- resbias4[,1:5]
-resCI4$sampL <- resCI4$sampMean - 1.96 * (sd(pop4$income)/sqrt(400))
-resCI4$sampU <- resCI4$sampMean + 1.96 * (sd(pop4$income)/sqrt(400))
-resCI4$samplength <- 2*1.96*(sd(pop4$income)/sqrt(400))
-resCI4 <- resCI4 %>% mutate(sampcoverage = ifelse(popMean > sampL & popMean < sampU, 1, 0)) 
+
+resCI4 <- restrial4$CI
+CI4 <- apply(resCI4, 2, mean)
 
 dat4 <- data.frame(trial=numeric(), method=character(), bias=numeric(), percentBias=numeric(), MSE=numeric(), ci_length=numeric(), ci_coverage=numeric(),
-                   stringsAsFactors=FALSE)
-dat4[1,] <- list(4, "unadjusted", bias4[6], bias4[7], MSE4["samp"], mean(resCI4$samplength), sum(resCI4$sampcoverage)/length(resCI4$sampcoverage))
-dat4[2,] <- list(4, "PS", bias4[8], bias4[9], MSE4["PS"], NA, NA)
-dat4[3,] <- list(4, "Rake", bias4[10], bias4[11], MSE4["rake"], NA, NA)
-dat4[4,] <- list(4, "PR", bias4[12], bias4[13], MSE4["PR"], NA, NA)
+                    stringsAsFactors=FALSE)
+dat4[1,] <- list(4, "unadjusted", bias4[6], bias4[7], MSE4["samp"], CI4[1], CI4[2])
+dat4[2,] <- list(4, "PS", bias4[8], bias4[9], MSE4["PS"], CI4[3], CI4[4])
+dat4[3,] <- list(4, "Rake", bias4[10], bias4[11], MSE4["rake"], CI4[5], CI4[6])
+dat4[4,] <- list(4, "PR", bias4[12], bias4[13], MSE4["PR"], CI4[7], CI4[8])
 dat4
 
 res4 <- subset(gather(restrial4$res), key != "popMean")
