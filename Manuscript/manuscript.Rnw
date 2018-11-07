@@ -124,12 +124,13 @@ Variance estimate?
 =======
 
 <<echo = FALSE>>=
-load("~/Dropbox/conditionalRaking/Manuscript/CRplots.rda")
+#load("~/Dropbox/conditionalRaking/Manuscript/CRplots.rda")
+#load("~/ConditionalRaking/Manuscript/CRplots.rda")
 @
 >>>>>>> 8fcde199a24aa0d6c12973fa92a5d68bd38f1766
 
 <<fig=TRUE, echo = FALSE>>=
-allplots[[1]]
+#allplots[[1]]
 @
 
 \subsection{More complicated case}

@@ -1,0 +1,171 @@
+\documentclass[aoas]{imsart}
+%\usepackage{setspace}
+
+%\usepackage{dsfont}
+\usepackage{amsthm,amsmath,amssymb,natbib}
+\RequirePackage[colorlinks,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{xspace,soul}
+\usepackage{graphicx}
+
+\usepackage[margin=1.45in]{geometry}
+
+
+% \startlocaldefs
+% \newcommand{\blind}{Three anonymous authors}
+% 
+% \newcommand{\Ex}{\mathbb{E}}
+% \newcommand{\Var}{\text{Var}}
+% \newcommand{\bp}{\mathbf{p}}
+% 
+% \newcommand{\R}{\textsf{R}\xspace}
+% \newcommand{\pkg}[1]{\texttt{#1}\xspace}
+% 
+% \definecolor{orange}{rgb}{1, 0.5, 0}
+% 
+% \newcommand{\greg}[1]{\sethlcolor{orange}\hl{[GM]: #1}}
+% \newcommand{\ben}[1]{\sethlcolor{green}\hl{[BB]: #1}}
+% \newcommand{\mike}[1]{\sethlcolor{cyan}\hl{[ML]: #1}}
+% 
+% \def\balpha{\pmb{\alpha}}
+% \def\btheta{\pmb{\theta}}
+% \def\bgamma{\pmb{\gamma}}
+% \def\btheta{\pmb{\theta}}
+% \def\bphi{\pmb{\phi}}
+% \def\bpsi{\pmb{\psi}}
+% \def\bB{\pmb{B}}
+% \def\bD{\pmb{D}}
+% \def\bH{\pmb{H}}
+% \def\bS{\pmb{S}}
+% \def\bX{\pmb{X}}
+% 
+% \endlocaldefs
+
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\begin{frontmatter}
+
+\title{Conditional Raking}
+\runtitle{Conditional Raking}
+
+
+
+\author{\fnms{Emily M.} \snm{Kotnik}\ead[label=e1]{}}
+\address{\printead{e1}}
+\affiliation{Loyola University Chicago}
+
+\and
+\author{\fnms{Gregory J.} \snm{Matthews}\corref{}\ead[label=e2]{gmatthews1@luc.edu}}
+\address{\printead{e2}}
+\affiliation{Loyola University Chicago}
+
+
+
+\runauthor{Kotnik and Matthews }
+
+\begin{abstract}
+
+Some abstract
+
+\end{abstract}
+
+\begin{keyword}
+\kwd{post-stratification}
+\kwd{raking}
+\kwd{sampling}
+\end{keyword}
+
+\end{frontmatter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\input{intro}
+
+
+\section{Introduction}
+
+
+Accurately analyzing data from samples with an unequal probability of being sampled provides a unique challenge that has been a topic of concern for statisticians for decades when stratified sampling is not an option. Stratified sampling has been one of the primary methods used in order to produce a more precise representation of the population (Lohr, 2010, p. 26) since it was first brought to the forefront of survey methodology in 1934 by Neyman. Neyman proposed stratified sampling and purposive selection as a method to ensure a sample that was representative of the population (Neyman, 1934). Stratified sampling is used to ensure the proportions of the sample are equal to those of the population to obtain very precise data on the population of interest, and as method in increasing efficiency of administering a survey (Lohr, 2010, p.74). Though stratified random sampling is a satisfactory method to increase precision, marginal population totals are necessary and stratification must be performed prior to sampling. 
+
+	In the event that stratified sampling is not possible or the data was collected at a previous date, several methods are used to correct samples of subjects with unequal probabilities of selection. The two primary methods of increasing precision are post stratification and raking. Both methods require additional data from a secondary data source. Post stratification partitions the sample based on demographic variables of interest and weights each partition by the known proportions from the population (Gelman, Little, 1997).  Raking, first proposed in 1940 by Deming and Stephan under the name "least squares adjustment" (Deming, 1940), was first used as a method to bring the marginal distributions from sample data to those of the known population distributions from the 1940 US Census (Brick, Montaquila, Roth, 2003) through a series of adjustments based on the known marginal totals until the sample frequencies converge with the population frequencies (Brick, Montaquila, Roth, 2003).  The resulting frequencies from both post stratification and raking offered more precise joint and marginal totals while minimizing sample bias.
+	
+	Post stratification and raking have also been extended beyond their initial usage. For example, Little details a Bayesian model using post stratification weights (Little, 1993) and Deville et al. extend raking procedures to create generalized raking weights using calibration estimators (1993). By combining these methods with other weighting methods such as inverse probability weighting, post stratification and raking can greatly alleviate problems with sampling bias.
+	However, raking does not lend itself to straightforward calculations of variance due to its iterative nature. Gelman and Lu showed that once weighting procedures were used to correct for sampling and nonsampling biases, simple random sampling variance estimates widely underestimated the true sampling variance. In a sample that had weights adjusted through inverse probability weights, post stratification, and raking, more complex methods such as jackknife and design based variance calculations were needed (2002). 
+	
+	Both post stratification and raking have limitations that have been acknowledged though few solutions have been proposed. Regarding post stratification, Holt and Smith argue that a post stratified estimate is not always more accurate than a simple random sample. In the event that the sample is stratified into many categories, each with many levels, it may be not be possible to adjust each cell due to the large number of calculations required or empty cells in the frequency table (Holt, Smith 1979). Additionally, the population distribution of each variable in question must be known for accurate post stratification. If this is not the case, or if the population distribution is inaccurate, additional calculations must be performed to effectively model the variable in question (Little and Gelman, 1997)
+
+Brick, Montaquila, and Roth identified several problems with raking. The first arises from inconsistent population marginal frequencies. If multiple external data sources are used to provide population data in the event the necessary information is not available from one source, inconsistent counts may be found and result in inaccurate adjustments. The second problem identified with raking results from a large number of variables. Raking across tables with a large number of cells may result slow convergence or a failure to converge (2003). While typically raking estimates converge after approximately 3 to 10 iterations, when cell counts are less than 1\% of the total sample cases many more iterations may be needed (Battaglia, Hoaglin, Frankel, 2009). Additionally, raking may inaccurately adjust cells with few or no observations (Brick, Montaquila, Roth, 2003).  Methods for dealing with sparse joint distribution information generally involve collapsing strata in order to increase cell size (Little 1993). 
+
+Though post stratification and raking have their uses in correcting data collected from survey subjects with unequal probabilities of selection, there is an intermediate case that is not accounted for in either of these methods. For privacy reasons, auxiliary data sources may only release partial joint distribution information. Likewise, only partial joint distribution information may be available if multiple sources are used. In this case, there is no readily available method to rake or post stratify the data while taking advantage of all available auxiliary information. This paper proposes a method to accurately adjust the data to be reflective of the population. 
+
+The following section describes the partial raking method. By conditioning on the variables where the population joint distribution is known before raking on the other variables, partial raking takes advantage of all available auxiliary information to create less biased estimates of the population. Section 3 details a simulation study showing a simple partial raking case using 3 variables with 2 pairs of variables have joint distribution information, and a more complex case using 4 variables with 3 pairs of joint distribution information. 
+
+
+
+
+\section{Methods}
+Consider a data set with $n$ observations and $p$ variables that is a sample from a population $P$.  There are $k\le p$ stratifying variables where there is at least some information about the joint population distribution of these $k$ variables.  That is we know based on auxilliary information the population counts of specified combinations of these $k$ variables.  
+
+Partition the $p$ variables into two sets: stratifiers and non-stratifers.  Denote the non-stratifiers as $Y_{1}, \cdots, Y_{p-k}$ and the stratifiers as $Z_{1}, \cdots, Z_{k}$.  Let $A_{j}$ consist of the set of variables in the $j$-th known joint population distribution which will be used to post-stratifywhere $j= 1, \cdots, \ell$.  
+
+
+
+\subsection{Theoretcal Results}
+Expected value of post -stratified mean?  How much bias is there?  
+Variance estimate?
+
+
+\section{Simulation Study}
+\subsection{Simple k=3, l=2 case}
+
+A population is created with 100,000 observations with four binary variables ("age", "sex", "race") and a continuous variable ("income"). Age is given a binomial distribution with a probability of 0.6 of being set to 1 instead of 0. The other binary variables are determined using the inverse logit link function based on the previous varibles. Sex is set to BLAH BLAH BLAH. Race is set to BLAH BLAH BLAH. Income is defined by EQUATION.
+
+The goal is to estimate the mean of income through poststratification, partial raking, and raking in 100 simulations. In this example, there is joint distribution information for age and sex, as well as age and race, but not for all three variables.
+
+In each simulation, stratified samples with equal sized strata are taken using sample_n from the PACKAGENAME. First, poststratification weights are calculated by dividing the K pop. strata size by k sample strata size. Raking weights are calculated with the anesrake() function from the anesrake package (Pasek 2016). Partial raking weights are calculated by conditioning on each level of age and then using the anesrake() function to calculate the weights for sex and race at the given age level.
+
+Apart from the mean income calculated with each of the three weights, bootstrapped confidence intervals (created with 500 iterations) are calculated for each sample.
+
+Without any weighting adjustments, the average percent bias for the mean of the fifth variable (“income”) is -19.95\% while means calculated with poststratification have a much smaller average bias of -.06\%. Raking has an average percent bias of -2.75\% while partial raking has a similar percent bias to post stratification as the population is constructed in such a way that the samples are more representative of the population in comparison to the next (??) example.
+
+
+
+
+
+
+<<fig=TRUE, echo=FALSE, label=fig1plot>>=
+library(gridExtra)
+library(xtable)
+load("~joylee/Research Project/ConditionalRaking/hist3.rda")
+hist3
+load("~joylee/Research Project/ConditionalRaking/biastbl3.rda")
+biastbl
+xtable(as.table(biastbl))
+load("/Users/joylee/Research Project/ConditionalRaking/ci_tbl3.rda")
+grid.table(ci_tbl)
+
+@
+
+
+
+\subsection{More complicated case}
+
+
+
+\section{Conclusion and Future Work}
+
+Partial Raking is okay, unless the population is super wonky and leads to samples that are very, very different with a lot of sparse cells, etc. Then it's no better than raking. Finding formulas for this would be nice, but who knows if that's possible since raking is iterative and doesn't have a closed form solution. blah blah blah blah
+
+\cite{key}
+
+
+
+\bibliographystyle{imsart-nameyear}
+\bibliography{refs}
+
+
+
+
+
+\end{document}
